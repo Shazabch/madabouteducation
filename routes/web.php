@@ -17,6 +17,11 @@ use Illuminate\Support\Facades\Mail;
 
 use Illuminate\Support\Facades\Route;
 
+
+use App\Http\Livewire\Admin\Promotion\Dashboard;
+use App\Http\Livewire\Admin\Promotion\Index;
+use App\Http\Livewire\Admin\Promotion\Form;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -186,6 +191,18 @@ Route::middleware(['public_user', 'verified'])->prefix('dashboard')->group(funct
 
 #For admin only
 Route::middleware(['admin', 'verified'])->prefix('admin')->name('admin.')->group(function () {
+
+
+    Route::prefix('promotions')->name('promotions.')->group(function () {
+
+        Route::view('/dashboard', 'admin.promotion.dashboard')->name('dashboard');
+
+        Route::view('/', 'admin.promotion.index')->name('index');
+
+        Route::view('/create', 'admin.promotion.form')->name('create');
+    });
+
+
     Route::get('/', function () {
         return view('admin.dashboard');
     })->name('dashboard');
@@ -254,7 +271,7 @@ Route::middleware(['admin', 'verified'])->prefix('admin')->name('admin.')->group
     Route::get('/others/newsletter', function () {
         return view('admin.newsletter');
     })->name('newsletter')->middleware('can:newsletter-management');
-     Route::get('/others/carousel', function () {
+    Route::get('/others/carousel', function () {
         return view('admin.carousel');
     })->name('carousel')->middleware('can:carousel-management');
 });
