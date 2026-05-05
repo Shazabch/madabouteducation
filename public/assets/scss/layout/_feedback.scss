@@ -1,0 +1,93 @@
+@use '../utils' as *;
+
+//=============== 28. FEEDBACK CSS START ===============
+.bd-feedback {
+    $self: &;
+    border-radius: 24px;
+    filter: drop-shadow(5px 5px 0 var(--bd-theme-1));
+
+    &-area {
+        .bd-section-title {
+            br {
+                @media #{$lg,$md,$sm,$xs} {
+                    display: none;
+                }
+            }
+        }
+    }
+
+    &-path-shape {
+        position: absolute;
+        inset-inline-start: -20px;
+        top: 12px;
+
+        @media #{$lg} {
+            inset-inline-start: -10px;
+            top: 10px;
+        }
+
+        img {
+            @media #{$xl,$lg,$md,$sm,$xs} {
+                width: 100%;
+            }
+        }
+    }
+
+    &-thumb {
+        &-mask {
+            -webkit-mask-image: url('../img/shape/hero-3-mask.png');
+            mask-image: url('../img/shape/hero-3-mask.png');
+            -webkit-mask-repeat: no-repeat;
+            mask-repeat: no-repeat;
+            -webkit-mask-size: contain;
+            mask-size: contain;
+            -webkit-mask-position: right;
+            mask-position: right;
+            display: inline-flex;
+
+            img {
+                @media #{$xl,$lg,$md,$sm,$xs} {
+                    width: 100%;
+                }
+            }
+        }
+
+        &-shape {
+            top: 40px;
+            inset-inline-end: 80px;
+
+            @media #{$lg,$md} {
+                top: 0;
+            }
+
+            @media #{$sm,$xs} {
+                top: -30px;
+                inset-inline-end: 40px;
+            }
+        }
+    }
+
+    &-content {
+        padding: 32px;
+
+        @media #{$sm,$xs} {
+            padding: 20px 30px;
+        }
+
+        p {
+            line-height: 30px;
+            font-weight: 500;
+            padding-right: 10px;
+        }
+    }
+
+    &-author {
+        font-size: 18px;
+        font-weight: 500;
+        color: rgba(27, 27, 27, 1);
+    }
+
+
+}
+
+// FEEDBACK CSS END

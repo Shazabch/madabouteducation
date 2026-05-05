@@ -1,0 +1,98 @@
+@use '../utils' as *;
+
+// 06 PAGINATION CSS START
+
+// swiper slider dots pagination
+.bd-dots-pagination {
+    display: flex;
+    gap: 8px;
+    margin-top: 50px;
+    justify-content: center;
+
+    span {
+        height: 8px;
+        width: 16px;
+        border-radius: 8px;
+        background: var(--bd-grey-1);
+        opacity: 1;
+
+        &.swiper-pagination-bullet-active {
+            background: var(--bd-common-black);
+        }
+    }
+
+    &.fill-pagination {
+        span {
+            background: var(--bd-theme-2);
+
+            &.swiper-pagination-bullet-active {
+                background: var(--bd-common-black);
+            }
+        }
+    }
+}
+
+.bd-pagination {
+    ul {
+        list-style-type: none;
+        display: flex;
+        gap: 8px;
+
+        li {
+            & .page-numbers {
+                height: 48px;
+                width: 48px;
+                line-height: 48px;
+                text-align: center;
+                color: var(--bd-common-black);
+                background-color: var(--bd-grey-1);
+                font-size: 16px;
+                font-weight: 500;
+                border-radius: 12px;
+                display: block;
+                @include transition(.3s);
+
+                &:hover {
+                    background-color: var(--bd-theme-1);
+                    color: var(--bd-common-white);
+                }
+
+                &.current {
+                    color: var(--bd-common-white);
+                    background-color: var(--bd-theme-1);
+                }
+            }
+        }
+    }
+}
+
+// swiper slider navigation
+
+.bd-swiper-navigation {
+    display: flex;
+    gap: 15px;
+    justify-content: end;
+
+    @media #{$sm,$xs} {
+        justify-content: start;
+        padding-top: 28px;
+        padding-bottom: 5px;
+    }
+
+    button {
+        height: 48px;
+        width: 48px;
+        font-size: 20px;
+        line-height: 48px;
+        text-align: center;
+        border-radius: 50%;
+        border: 1px solid var(--bd-common-black);
+
+        &:hover {
+            color: var(--bd-common-white);
+            background-color: var(--bd-common-black);
+        }
+    }
+}
+
+//PAGINATION CSS END

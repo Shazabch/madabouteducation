@@ -1,0 +1,151 @@
+h2 {
+    font-size: 40px;
+}
+
+h3 {
+    font-size: 25px;
+}
+
+h5 {
+    font-size: 20px !important;
+}
+
+.nav-pills .nav-link.active {
+    background-color: #FF9B24;
+    color: white;
+}
+
+.nav-pills .nav-link {
+    color: #FF9B24;
+}
+
+.nav-pills .nav-link.disabled {
+    color: grey;
+}
+
+.text_orange {
+    color: #FF9B24;
+}
+
+.text_green {
+    color: #00BBAE;
+}
+
+.bg_orange {
+    background-color: #FF9B24;
+}
+
+.bg_green {
+    background-color: #00BBAE;
+}
+
+.btn-orange {
+    background-color: #FF9B24;
+    color: #fff;
+    transition: all .7s;
+}
+
+.btn-orange:hover {
+    background-color: #d27a0e;
+    color: #fff;
+}
+
+.btn-green {
+    background-color: #00BBAE;
+    color: #fff;
+    transition: all .7s;
+}
+
+.btn-green:hover,
+.btn-green.active {
+    background-color: #039a90;
+    color: #fff;
+}
+
+.btn-primary {
+    background-color: #00BBAE;
+    color: #fff;
+    transition: all .7s;
+}
+
+.btn-primary:hover,
+.btn-primary.active {
+    background-color: #039a90;
+    border-color: #039a90;
+    color: #fff;
+}
+
+.border_green {
+    border-color: #039a90;
+}
+
+.border_orange {
+    border-color: #d27a0e;
+}
+
+.page-link,
+.page-link:hover {
+    color: #FF9B24;
+}
+
+.page-item.active .page-link {
+    background-color: #FF9B24 !important;
+    border-color: #FF9B24 !important;
+}
+
+.wa-float-wrapper {
+    position: fixed;
+    width: 60px;
+    height: 60px;
+    bottom: 20px;
+    float: right;
+    right: 15px;
+    background-color: #25d366;
+    color: #FFF;
+    border-radius: 50px;
+    text-align: center;
+    font-size: 30px;
+    box-shadow: 2px 2px 3px #999;
+    z-index: 100;
+}
+
+.wa-float {
+    margin-top: 16px;
+    color: #FFF;
+}
+
+.wa-float:hover {
+    margin-top: 16px;
+    color: #dfdfdf;
+}
+
+
+.bd-promotion-counter-wrapper {
+    display: -webkit-box;
+}
+
+.rounded-square-thumbnail {
+    width: 50px;
+    height: 50px;
+    overflow: hidden;
+    background-size: cover;
+    background-position: center center;
+}
+
+.bd-cart-btn:disabled{
+    background-color: #d4d4d4;
+    color: white;
+    opacity: 50%;
+}
+
+@media only screen and (max-width:700px){
+
+    .bd-promotion-counter-wrapper{
+
+        display: flex  !important;
+
+        flex-direction: column;
+
+    }
+
+}

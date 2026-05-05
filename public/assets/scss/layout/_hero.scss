@@ -1,0 +1,558 @@
+@use '../utils' as *;
+
+// =============== 15. HERO CSS START ===============
+
+
+.bd-hero {
+    $self: &;
+
+    &-3 {
+        &-shape {
+            position: absolute;
+            bottom: 0;
+            inset-inline-start: 0;
+            opacity: .3;
+
+            &-2 {
+                position: absolute;
+                inset-inline-start: 50%;
+                transform: translateX(-50%);
+                animation: bd-updown-2 2s infinite alternate-reverse;
+            }
+        }
+    }
+
+    &-area {
+        position: relative;
+        min-height: 858px;
+        display: flex;
+        align-items: center;
+
+        @media #{$xxl} {
+            min-height: 800px;
+        }
+
+        @media #{$xl} {
+            min-height: 750px;
+        }
+
+        @media #{$lg} {
+            min-height: 680px;
+        }
+
+        @media #{$md} {
+            min-height: 600px;
+        }
+
+        @media #{$sm,$xs} {
+            min-height: auto;
+            padding-top: 100px;
+        }
+
+        &-2 {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        &-3 {
+            @media #{$sm,$xs} {
+                min-height: auto;
+                padding-top: 100px;
+                padding-bottom: 100px;
+            }
+        }
+    }
+
+    &-navigation {
+        display: flex;
+        gap: 10px;
+        justify-content: end;
+        flex-direction: column;
+        position: absolute;
+        z-index: 2;
+        right: 70px;
+        top: 50%;
+        transform: translateY(-50%);
+
+        @media #{$xxxl} {
+            right: 50px;
+        }
+
+        @media #{$xxl,$xl,$lg,$md} {
+            @include rtl {
+                left: 70px;
+                right: auto;
+            }
+        }
+
+        @media #{$sm,$xs} {
+            justify-content: start;
+            padding-top: 28px;
+            padding-bottom: 5px;
+        }
+
+        button {
+            height: 52px;
+            width: 52px;
+            font-size: 20px;
+            line-height: 52px;
+            text-align: center;
+            border-radius: 50%;
+            border: 1px solid var(--bd-common-white);
+            color: var(--bd-common-white);
+
+            @media #{$xxl,$xl,$lg,$md} {
+                @include rtl {
+                    border: 1px solid #FFF;
+                    color: var(--bd-common-white);
+                }
+            }
+
+
+            &:hover {
+                color: var(--bd-common-black);
+                background-color: var(--bd-common-white);
+
+                @include rtl {
+                    background-color: var(--bd-theme-2);
+                    border-color: var(--bd-theme-2);
+                }
+
+            }
+        }
+    }
+
+    &-bottom-shape {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: -8px;
+        z-index: 3;
+
+        img {
+            width: 100%;
+        }
+    }
+
+    &-social {
+        position: relative;
+
+        &::before {
+            content: "";
+            position: absolute;
+            height: 4px;
+            width: 2px;
+            background-color: var(--bd-theme-2);
+            right: -20px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        &:last-child {
+            &::before {
+                content: none;
+
+                @include rtl {
+                    content: "";
+                }
+            }
+        }
+
+        &:first-child {
+            &::before {
+                @include rtl {
+                    content: none;
+                }
+            }
+        }
+
+        &-wrapper {
+            display: flex;
+            gap: 40px;
+            position: absolute;
+            left: 55px;
+            transform-origin: 50% 0;
+            top: 50%;
+            transform: translate(-50%, -50%) rotate(-90deg);
+            z-index: 2;
+
+            @media #{$xxxl} {
+                @include rtl {
+                    left: 25px;
+                }
+            }
+
+            @media #{$xxl,$xl,$lg,$md,$sm,$xs} {
+                display: none;
+            }
+
+            &.is-white {
+                #{$self} {
+                    &-social {
+                        a {
+                            color: var(--bd-common-white);
+
+                            &:hover {
+                                color: var(--bd-theme-2);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        a {
+            font-size: 16px;
+            line-height: 32px;
+            text-transform: capitalize;
+            font-weight: var(--bd-fw-medium);
+
+            &:hover {
+                color: var(--bd-theme-1);
+            }
+
+            i {
+                margin-inline-end: 10px;
+            }
+        }
+    }
+
+    &-inner {
+        padding-top: 70px;
+
+        &-2 {
+            min-height: 820px;
+            width: 100%;
+
+            @media #{$xl} {
+                min-height: 750px;
+            }
+
+            @media #{$lg} {
+                min-height: 700px;
+            }
+
+            @media #{$md,$sm} {
+                min-height: 600px;
+            }
+
+            @media #{$xs} {
+                min-height: 450px;
+            }
+        }
+    }
+
+    &-bg {
+        position: absolute;
+        left: 0;
+        top: 0;
+        height: 100%;
+        width: 100%;
+        z-index: -1;
+        background-repeat: no-repeat;
+        background-size: cover;
+        background-position: center;
+        transform: scale(1);
+        -webkit-transition: all 8s linear 0s;
+        -moz-transition: all 8s linear 0s;
+        -o-transition: all 8s linear 0s;
+        transition: all 8s linear 0s;
+
+        @media #{$lg} {
+            background-position: 60% center;
+        }
+
+        @media #{$md} {
+            background-position: 70% center;
+        }
+
+        @media #{$sm,$xs} {
+            background-position: 80% center;
+        }
+
+        &::before {
+            content: "";
+            background: linear-gradient(270deg, #001413 16.09%, rgba(0, 0, 0, 0) 84.22%);
+            transform: rotate(-180deg);
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            height: 100%;
+            width: 100%;
+        }
+    }
+
+    &-bottom-line-shape {
+        &::before {
+            content: "";
+            position: absolute;
+            height: 200px;
+            bottom: 0px;
+            left: 0;
+            background: #fff;
+            width: 100%;
+            z-index: 1;
+            clip-path: polygon(0 100%, 100% 84%, 100% 100%, 0% 100%);
+        }
+    }
+
+    &-shape {
+        position: absolute;
+
+        &-1 {
+            bottom: 100px;
+            inset-inline-start: 110px;
+            animation: bd-updown-2 2s infinite alternate-reverse;
+
+            @media #{$xl,$lg} {
+                bottom: 50px;
+                inset-inline-start: 30px;
+            }
+        }
+
+        &-2 {
+            top: 230px;
+            inset-inline-end: 110px;
+            animation: bd-updown-2 2s infinite alternate-reverse;
+
+            @media #{$xl,$lg} {
+                top: 160px;
+                inset-inline-end: 100px;
+            }
+
+            @media #{$md,$sm,$xs} {
+                top: 100px;
+            }
+        }
+    }
+
+    &-content {
+        margin-inline-start: -30px;
+        position: relative;
+        z-index: 3;
+
+        @media #{$xl,$lg,$md,$sm,$xs} {
+            margin-inline-start: 0px;
+        }
+
+        @media #{$md} {
+            padding-top: 0px;
+            padding-bottom: 50px;
+        }
+
+        @media #{$sm,$xs} {
+            padding-bottom: 60px;
+        }
+
+        &-2 {
+            @media #{$sm,$xs} {
+                padding-bottom: 0px;
+            }
+        }
+
+        span {
+            font-size: 23px;
+            font-weight: var(--bd-fw-sbold);
+            color: var(--bd-theme-1);
+            margin-bottom: 10px;
+            display: inline-block;
+
+            @media #{$sm,$xs} {
+                font-size: 18px;
+            }
+        }
+
+        &.is-white {
+            span {
+                color: var(--bd-common-white);
+            }
+
+            #{$self} {
+                &-title {
+                    color: var(--bd-common-white);
+                }
+            }
+        }
+
+        &-wrapper {
+            &-2 {
+                min-height: 820px;
+
+                @media #{$xl} {
+                    min-height: 750px;
+                }
+
+                @media #{$lg} {
+                    min-height: 700px;
+                }
+
+                @media #{$md,$sm} {
+                    min-height: 600px;
+                }
+
+                @media #{$xs} {
+                    min-height: 450px;
+                }
+            }
+        }
+    }
+
+    &-title {
+        margin-bottom: 56px;
+
+        @media #{$xl,$lg,$md,$sm,$xs} {
+            margin-bottom: 45px;
+        }
+
+        @media #{$xxl} {
+            font-size: 80px;
+        }
+
+        @media #{$xl} {
+            font-size: 70px;
+        }
+
+        @media #{$lg} {
+            font-size: 60px;
+        }
+
+        @media #{$md} {
+            font-size: 50px;
+        }
+
+        @media #{$sm} {
+            font-size: 45px;
+        }
+
+        @media #{$xs} {
+            font-size: 40px;
+        }
+    }
+
+    &-btn {
+        a {
+            &.bd-btn {
+                height: 60px;
+                line-height: 60px;
+                padding: 0px 40px;
+
+                span {
+                    font-size: 16px;
+                    font-weight: 500;
+                    color: var(--bd-common-white);
+                }
+            }
+        }
+    }
+
+    &-thumb {
+        position: relative;
+        z-index: 2;
+
+        img {
+            @media #{$xxxl,$xxl,$xl,$lg,$md,$sm,$xs} {
+                width: 100%;
+            }
+        }
+
+        &-3 {
+            &-mask {
+                -webkit-mask-image: url('../img/shape/hero-3-mask.png');
+                mask-image: url('../img/shape/hero-3-mask.png');
+                -webkit-mask-repeat: no-repeat;
+                mask-repeat: no-repeat;
+                -webkit-mask-size: contain;
+                mask-size: contain;
+                -webkit-mask-position: right;
+                mask-position: right;
+                display: inline-flex;
+
+                img {
+                    @media #{$xxl,$xl,$lg,$md,$sm,$xs} {
+                        width: 100%;
+                    }
+                }
+            }
+
+            &-shape {
+                &-1 {
+                    top: 0;
+                    inset-inline-end: 0;
+                }
+
+                &-2 {
+                    inset-inline-end: -100px;
+                    bottom: -20px;
+
+                    @media #{$xxl,$xl,$lg,$md} {
+                        inset-inline-end: 0px;
+                        bottom: -20px;
+                    }
+                }
+
+                &-3 {
+                    inset-inline-start: -35px;
+                    bottom: 12%;
+                }
+            }
+        }
+
+        &-wrapper {
+            position: absolute;
+            bottom: 0;
+            inset-inline-start: calc(50% - 20px);
+            max-width: 886px;
+
+            @media #{$xxl} {
+                max-width: 740px;
+            }
+
+            @media #{$xl} {
+                max-width: 650px;
+            }
+
+            @media #{$lg} {
+                max-width: 650px;
+            }
+
+            @media #{$md} {
+                inset-inline-start: 45%;
+            }
+
+            @media #{$sm,$xs} {
+                position: relative;
+                bottom: 0;
+                inset-inline-start: 0;
+                max-width: 100%;
+            }
+        }
+
+        &-shape {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+
+            img {
+                animation: bd-updown 1.5s infinite alternate ease-in-out;
+
+                @media #{$xl,$lg,$md,$sm,$xs} {
+                    width: 100%;
+                }
+            }
+
+            @media #{$xl,$lg,$md,$sm,$xs} {
+                width: 85%;
+            }
+        }
+    }
+}
+
+.swiper-slide-active .bd-hero-bg {
+    -webkit-transform: scale(1.12);
+    -moz-transform: scale(1.12);
+    transform: scale(1.12);
+}
+
+// HERO CSS END

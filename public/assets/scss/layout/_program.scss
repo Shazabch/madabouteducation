@@ -1,0 +1,565 @@
+@use '../utils' as *;
+
+// ============== 23. PORTFOLIO CSS START HERE ============== 
+
+.bd-program {
+    $self: &;
+    background: var(--bd-common-white);
+    padding: 24px;
+    border-radius: 24px;
+
+    @media #{$xs} {
+        flex-direction: column;
+        padding: 20px;
+    }
+
+    &:hover {
+        & #{$self} {
+            &-shape {
+                opacity: 1;
+                visibility: visible;
+            }
+        }
+    }
+
+    &-2 {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+
+        &.clr {
+            &-1 {
+                #{$self} {
+                    &-thumb {
+                        &-2 {
+                            &::before {
+                                border-color: var(--bd-theme-1);
+                            }
+                        }
+                    }
+
+                    &-info {
+                        &-wrapper {
+                            &-2 {
+                                background-color: #EBFFFE;
+                            }
+                        }
+
+                        &::before {
+                            border-right: 2px solid var(--bd-theme-1);
+                        }
+                    }
+                }
+            }
+
+            &-2 {
+                #{$self} {
+                    &-thumb {
+                        &-2 {
+                            &::before {
+                                border-color: var(--bd-theme-2);
+                            }
+                        }
+                    }
+
+                    &-info {
+                        &-wrapper {
+                            &-2 {
+                                background-color: #FFECD6;
+                            }
+                        }
+
+                        &::before {
+                            border-right: 2px solid var(--bd-theme-2);
+                        }
+                    }
+                }
+            }
+
+            &-3 {
+                #{$self} {
+                    &-thumb {
+                        &-2 {
+                            &::before {
+                                border-color: var(--bd-theme-3);
+                            }
+                        }
+                    }
+
+                    &-info {
+                        &-wrapper {
+                            &-2 {
+                                background-color: #FFEBEF;
+                            }
+                        }
+
+                        &::before {
+                            border-right: 2px solid var(--bd-theme-3);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    &.clr {
+        &-1 {
+            background-color: var(--bd-theme-7);
+        }
+
+        &-2 {
+            background-color: var(--bd-theme-6);
+        }
+
+        &-3 {
+            background-color: #FFEBEF;
+        }
+
+        &-4 {
+            background-color: #FFEBEB;
+        }
+
+        &-5 {
+            background-color: #EBFAFF;
+        }
+
+        &-6 {
+            background-color: #EBEBFF;
+        }
+    }
+
+    &-area {
+        position: relative;
+    }
+
+
+    &-thumb {
+        overflow: hidden;
+        @include transition(.3s);
+        border-radius: 24px;
+        position: relative;
+        width: 100%;
+        height: 245px;
+
+        &::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -75%;
+            z-index: 2;
+            display: block;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(to right, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.3) 100%);
+            transform: skewX(-25deg);
+        }
+
+        &-2 {
+            height: 400px;
+            width: 400px;
+            border-radius: 50%;
+            padding: 8px;
+
+            &::before {
+                content: "";
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                height: 100%;
+                border-radius: 50%;
+                border: 4px solid var(--bd-theme-2);
+            }
+
+            @media #{$xl} {
+                width: 350px;
+                height: 350px;
+            }
+
+            @media #{$md,$sm,$xs} {
+                width: 300px;
+                height: 300px;
+            }
+
+            img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                border-radius: 50%;
+                transition: all 1s cubic-bezier(0, 0, 0.2, 1);
+            }
+
+            &:hover {
+                img {
+                    transform: translate(-4px, -6px) scale(1.04);
+                }
+            }
+        }
+
+        &-wrapper {
+            position: relative;
+        }
+
+        img {
+            width: 100%;
+            @include transition(.3s);
+            height: 100%;
+            object-fit: cover;
+        }
+
+        &:hover {
+            img {
+                transform: scale(1.1);
+            }
+
+            &::before {
+                animation: shine 800ms;
+            }
+        }
+    }
+
+    &-shape {
+        position: absolute;
+        inset-inline-end: 10px;
+        bottom: -15px;
+        opacity: 0;
+        visibility: hidden;
+        @include transition(.3s);
+        z-index: 2;
+    }
+
+    &-title {
+        margin-bottom: 15px;
+        margin-top: 15px;
+
+        @media #{$sm,$xs} {
+            font-size: 25px;
+        }
+    }
+
+    &-info {
+        position: relative;
+        text-align: center;
+
+        &::before {
+            content: "";
+            width: 2px;
+            height: 45px;
+            position: absolute;
+            inset-inline-end: -32px;
+            top: 50%;
+            transform: translateY(-50%);
+            opacity: 0.5;
+            border-right: 2px dashed var(--bd-common-white);
+
+            @media #{$md,$sm} {
+                inset-inline-end: -15px;
+            }
+
+            @media #{$xs} {
+                content: none;
+            }
+        }
+
+        &:last-child {
+            &::before {
+                content: none;
+            }
+        }
+
+        &-wrapper {
+            padding: 16px 20px;
+            display: flex;
+            gap: 64px;
+            justify-content: center;
+            border-radius: 24px;
+
+            @media #{$xl} {
+                gap: 45px;
+            }
+
+            @media #{$md,$sm} {
+                gap: 30px;
+            }
+
+            @media #{$xs} {
+                gap: 8px;
+                flex-direction: column;
+                align-items: center;
+            }
+
+            &-2 {
+                padding: 16px 20px;
+                display: flex;
+                gap: 64px;
+                justify-content: center;
+                border-radius: 16px;
+
+                @media #{$xl} {
+                    gap: 45px;
+                }
+
+                @media #{$md,$sm} {
+                    gap: 30px;
+                }
+
+                @media #{$xs} {
+                    gap: 8px;
+                    flex-direction: column;
+                    align-items: center;
+                    width: 100%;
+                }
+
+                & #{$self} {
+                    &-info {
+                        &-title {
+                            color: var(--bd-common-black);
+                        }
+
+                        span {
+                            color: var(--bd-common-text);
+                        }
+
+                        &::before {
+                            height: 34px;
+                        }
+                    }
+                }
+            }
+        }
+
+        &-title {
+            font-size: 18px;
+            line-height: 23px;
+            color: var(--bd-common-white);
+            margin-bottom: 0;
+
+            br {
+                @media #{$xs} {
+                    display: none;
+                }
+            }
+
+            @media #{$xs} {
+                display: flex;
+                gap: 15px;
+            }
+
+            span {
+                font-size: 16px;
+                font-weight: var(--bd-fw-normal);
+            }
+        }
+    }
+
+    &-view-btn {
+        a {
+            text-decoration: underline;
+            font-size: 16px;
+            line-height: 32px;
+            font-weight: var(--bd-fw-medium);
+        }
+    }
+
+    // bd-program-details css
+    &-details {
+        &-slider {
+            border-radius: 32px;
+            overflow: hidden;
+            height: 100%;
+
+            &-thumb {
+                height: 100%;
+                width: 100%;
+
+                @media #{$md} {
+                    height: 450px;
+                }
+
+                @media #{$sm} {
+                    height: 400px;
+                }
+
+                @media #{$xs} {
+                    height: 350px;
+                }
+
+                img {
+                    height: 100%;
+                    object-fit: cover;
+                    width: 100%;
+                    border-radius: 32px;
+                }
+            }
+        }
+
+        &-next,
+        &-prev {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 40px;
+            height: 40px;
+            border: 2px solid var(--bd-common-white);
+            z-index: 1;
+            border-radius: 50%;
+            inset-inline-end: 25px;
+            @include transition(.3s);
+            color: var(--bd-common-white);
+
+            &:hover {
+                background-color: var(--bd-common-white);
+                border-color: var(--bd-common-white);
+                color: var(--bd-common-black);
+            }
+        }
+
+        &-prev {
+            inset-inline-end: auto;
+            inset-inline-start: 25px;
+        }
+
+        &-active {
+            height: 100%;
+
+            @media #{$lg,$md} {
+                height: 500px;
+            }
+        }
+
+        &-widget {
+            &-content {
+                padding: 30px 32px 50px;
+                border-radius: 32px;
+
+                @media #{$xs} {
+                    padding: 30px 20px 50px;
+                }
+
+                p {
+                    line-height: 30px;
+                    margin-bottom: 20px;
+                }
+            }
+
+            &-title {
+                font-size: 45px;
+
+                @media #{$lg} {
+                    font-size: 40px;
+                }
+
+                @media #{$sm,$md} {
+                    font-size: 45px;
+                }
+
+                @media #{$xs} {
+                    font-size: 30px;
+                }
+            }
+        }
+
+        &-author {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+
+            &-wrapper {
+                display: flex;
+                align-items: center;
+                gap: 20px 50px;
+                flex-wrap: wrap;
+            }
+
+            &-thumb {
+                height: 73px;
+                width: 73px;
+
+                img {
+                    height: 100%;
+                    width: 100%;
+                    border-radius: 50%;
+                    object-fit: cover;
+                }
+            }
+
+            &-name {
+                span {
+                    display: inline-block;
+                    margin-bottom: 10px;
+                }
+
+                h5 {
+                    font-size: 23px;
+                }
+            }
+        }
+
+        &-cat {
+            position: relative;
+
+            h5 {
+                font-size: 23px;
+            }
+
+            span {
+                display: inline-block;
+                margin-bottom: 10px;
+            }
+
+            &::before {
+                content: "";
+                position: absolute;
+                height: 100%;
+                width: 1px;
+                background-color: var(--bd-theme-2);
+                top: 0;
+                inset-inline-start: -25px;
+
+                @media #{$xl,$sm,$xs} {
+                    content: none;
+                }
+            }
+
+            &-wrapper {
+                display: flex;
+                gap: 50px;
+                align-items: center;
+            }
+        }
+
+        &-list {
+            ul {
+                display: flex;
+                flex-direction: column;
+                gap: 16px;
+
+                li {
+                    list-style-type: none;
+                    position: relative;
+                    padding-inline-start: 30px;
+                    color: var(--bd-common-black);
+
+                    &::before {
+                        content: "\f105";
+                        font-family: var(--bd-ff-fontawesome);
+                        background: #FFEDD7;
+                        height: 20px;
+                        width: 20px;
+                        font-size: 15px;
+                        position: absolute;
+                        border-radius: 50%;
+                        line-height: 20px;
+                        inset-inline-start: 0;
+                        top: 5px;
+                        text-align: center;
+                        color: var(--bd-theme-2);
+                    }
+                }
+            }
+        }
+    }
+
+}
+
+//  PROGRAM CSS END HERE

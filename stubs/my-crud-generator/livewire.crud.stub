@@ -1,0 +1,59 @@
+<?php
+
+namespace App\Http\Livewire;
+
+use App\Models\{{modelName}};
+use Livewire\Component;
+use Livewire\WithPagination;
+
+class {{className}} extends Component
+{
+    use WithPagination;
+    protected $paginationTheme = 'bootstrap';
+
+    public {{modelName}} ${{objectName}};
+    public $editableMode=false;
+
+    {{validationRules}}
+
+    public function mount()
+    {
+        $this->{{objectName}}=new {{modelName}}();
+    }
+
+    public function createOrEdit($id=null)
+    {
+        if($id)
+        {
+            $this->{{objectName}}={{modelName}}::find($id);
+        }
+        else{
+            $this->{{objectName}}=new {{modelName}}();
+        }
+        $this->editableMode=true;
+    }
+
+    public function cancelEdit()
+    {
+        $this->editableMode=false;
+    }
+
+    public function save()
+    {
+        $this->validate();
+        $this->{{objectName}}->save();
+        $this->editableMode=false;
+        $this->dispatchBrowserEvent('success-notification',['message'=>'{{modelName}} saved successfully.']);
+    }
+
+    public function delete($id)
+    {
+        {{modelName}}::destroy($id);
+        $this->dispatchBrowserEvent('success-notification',['message'=>'{{modelName}} deleted successfully.']);
+    }
+
+    public function render()
+    {
+        return view('livewire.{{viewName}}',['{{objectName}}s'=>{{modelName}}::latest()->paginate(10)]);
+    }
+}

@@ -1,0 +1,21 @@
+@use '../utils' as *;
+
+/*----------------------------------------*/
+/*  07. TAB CSS START
+/*----------------------------------------*/
+
+.bd-tab {
+    & .nav-tabs {
+        padding: 0;
+        margin: 0;
+        border: 0;
+
+        & .nav-link {
+            padding: 0;
+            margin: 0;
+            border: 0;
+        }
+    }
+}
+
+// TAB CSS END

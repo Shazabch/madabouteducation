@@ -1,0 +1,116 @@
+@use '../utils' as *;
+
+//============== 24. NEWSLETTER CSS START HERE ============== 
+
+.bd-newsletter {
+    $self: &;
+    position: relative;
+    border-radius: 24px;
+    overflow: hidden;
+    margin-bottom: -214px;
+
+    &-bg {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-repeat: no-repeat;
+        background-size: cover;
+        opacity: .1;
+        -webkit-filter: grayscale(100%);
+        filter: grayscale(100%);
+    }
+
+    &-content {
+        position: relative;
+        z-index: 1;
+
+        @media #{$sm,$xs} {
+            padding: 0 20px;
+        }
+
+        &-2 {
+            @media #{$sm,$xs} {
+                padding: 0 0px;
+            }
+        }
+    }
+
+    &-input {
+        position: relative;
+        max-width: 78%;
+        margin: 0 auto;
+
+        @media #{$sm,$xs} {
+            max-width: 100%;
+        }
+
+        & .bd-btn {
+            &::before {
+                @media #{$xs} {
+                    height: 600px;
+                    width: 600px;
+                }
+            }
+        }
+
+        input {
+            width: 100%;
+            height: 72px;
+            border-radius: 50px;
+            outline: none;
+            border: 0;
+            padding-inline-start: 32px;
+            padding-inline-end: 230px;
+            font-size: 16px;
+            line-height: 32px;
+            font-weight: 500;
+
+            @include bd-placeholder {
+                opacity: .5;
+            }
+
+            @media #{$xs} {
+                padding-inline-start: 20px;
+                padding-inline-end: 20px;
+            }
+        }
+
+        button {
+            position: absolute;
+            inset-inline-end: 4px;
+            top: 50%;
+            transform: translateY(-50%);
+            height: 64px;
+            line-height: 64px;
+            padding: 0 40px 0 35px;
+            font-weight: 500;
+            font-size: 16px;
+            text-transform: capitalize;
+
+            @media #{$xs} {
+                position: relative;
+                inset-inline-start: 0;
+                inset-inline-end: auto;
+                bottom: 0;
+                transform: translateY(15%);
+                display: block;
+                width: 100%;
+            }
+
+            span {
+                display: inline-flex;
+                gap: 10px;
+                align-items: center;
+            }
+
+        }
+
+        &-2 {
+            max-width: 100%;
+        }
+    }
+}
+
+// NEWSLETTER CSS END HERE  

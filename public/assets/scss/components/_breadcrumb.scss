@@ -1,0 +1,105 @@
+@use '../utils' as *;
+
+/*----------------------------------------*/
+/*  BREADCRUMB CSS START
+/*----------------------------------------*/
+
+.bd-breadcrumb {
+    position: relative;
+    z-index: 2;
+    min-height: 354px;
+
+    &-bg {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        background-repeat: no-repeat;
+        background-size: cover;
+        mix-blend-mode: luminosity;
+        opacity: 0.1;
+    }
+
+    &-shape {
+        z-index: 2;
+
+        &-1 {
+            position: absolute;
+            top: 200px;
+            inset-inline-start: 0px;
+            animation: bd-updown-2 2s infinite alternate-reverse;
+        }
+
+        &-2 {
+            position: absolute;
+            top: 100px;
+            inset-inline-end: 0px;
+            animation: bd-updown-2 2s infinite alternate-reverse;
+        }
+    }
+
+    &-content {
+        color: var(--bd-common-white);
+    }
+
+    &-title {
+        color: var(--bd-common-white);
+        font-weight: var(--bd-fw-sbold);
+        margin-bottom: 5px;
+        font-size: 80px;
+
+        @media #{$xl} {
+            font-size: 60px;
+        }
+
+        @media #{$lg} {
+            font-size: 55px;
+        }
+
+        @media #{$sm,$md} {
+            font-size: 60px;
+        }
+
+        @media #{$xs} {
+            font-size: 50px;
+        }
+    }
+
+    &-list {
+        display: flex;
+        justify-content: center;
+        gap: 28px;
+
+        span {
+            position: relative;
+
+            a {
+                &:hover {
+                    color: var(--bd-theme-2);
+                }
+            }
+
+            i {
+                margin-inline-end: 10px;
+
+                @include rtl {
+                    margin-inline-start: 10px;
+                }
+            }
+
+            &:first-child {
+                &::before {
+                    position: absolute;
+                    content: "";
+                    height: 2px;
+                    width: 6px;
+                    border-radius: 40%;
+                    background-color: var(--bd-common-white);
+                    inset-inline-end: -15px;
+                    top: 50%;
+                }
+            }
+        }
+    }
+}

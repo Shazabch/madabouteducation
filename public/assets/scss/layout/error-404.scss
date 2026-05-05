@@ -1,0 +1,22 @@
+// =============== 34. ERROR 404 CSS START HERE ================
+.bd-error {
+    &-btn {
+        .bd-btn {
+            height: 62px;
+            line-height: 62px;
+
+            &-normal,
+            &-hover {
+                gap: 10px;
+            }
+        }
+    }
+
+    &-thumb {
+        img {
+            width: 100%;
+        }
+    }
+}
+
+// ERROR 404 CSS END HERE

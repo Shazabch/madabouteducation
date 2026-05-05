@@ -1,0 +1,442 @@
+@use '../utils' as *;
+
+// =============== 12. HEADER CSS START HERE ===============
+
+.bd-header {
+    $self: &;
+
+    .container {
+        max-width: 1820px;
+    }
+
+    &-transparent {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 0;
+        z-index: 333;
+    }
+
+    //header top area START
+    &-top {
+        padding-top: 9px;
+        padding-bottom: 9px;
+        position: relative;
+
+        &-2 {
+            background-color: var(--bd-theme-6);
+            padding-top: 11px;
+            padding-bottom: 11px;
+        }
+
+        &-3 {
+            background-color: var(--bd-theme-1);
+            padding-top: 11px;
+            padding-bottom: 11px;
+        }
+
+        &-bg {
+            @include bd-gradient((100.88deg, #EBFFFE 0.6%, #FFF6EB 100%));
+            transform: rotate(-180deg);
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            top: 0;
+        }
+
+        &-shape {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: -13px;
+            transform: rotate(180deg);
+        }
+
+        &-clip-shape {
+            position: absolute;
+            inset-inline-start: 0;
+            top: 0;
+            height: 100%;
+            width: 278px;
+            background-color: var(--bd-theme-1);
+            clip-path: polygon(0 0, 96% 0, 100% 100%, 0% 100%);
+
+            @media #{$xl} {
+                width: 250px;
+            }
+
+            @include rtl {
+                clip-path: polygon(4% 00%, 100% 0, 100% 100%, 0% 100%);
+            }
+        }
+
+        &-wrapper {
+            position: relative;
+            z-index: 1;
+        }
+    }
+
+    &-meta {
+
+        &-items {
+            gap: 25px;
+
+            &-2 {
+                gap: 85px;
+            }
+
+            &-3 {
+                gap: 16px;
+            }
+        }
+
+        &-item {
+            gap: 8px;
+
+            &.is-white {
+                #{$self} {
+                    &-meta {
+                        &-icon {
+                            i {
+                                color: var(--bd-common-white);
+                            }
+                        }
+
+                        &-text {
+                            p {
+                                color: var(--bd-common-white);
+
+                                a {
+                                    &:hover {
+                                        color: var(--bd-theme-2);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        &-icon {
+            i {
+                color: var(--bd-theme-2);
+                font-size: 16px;
+            }
+
+            &-3 {
+
+                a {
+                    font-size: 20px;
+                    color: var(--bd-theme-1);
+
+                    &:hover {
+                        color: var(--bd-theme-2);
+                    }
+                }
+
+                &.bd-wistlist {
+                    a {
+                        font-size: 22px;
+                    }
+                }
+            }
+        }
+
+        &-text {
+            p {
+                margin: 0;
+                font-size: 15px;
+
+                span {
+                    font-weight: 500;
+                    text-decoration: underline;
+                }
+
+                a {
+                    &:hover {
+                        color: var(--bd-theme-1);
+                    }
+                }
+            }
+        }
+    }
+
+    //header top area end
+
+    //header bottom css
+    &-bottom {
+        top: 55px;
+
+        @media #{$md,$sm,$xs} {
+            top: 0;
+            padding: 25px 0;
+        }
+
+        &-2 {
+            position: relative;
+
+            @media #{$md,$sm,$xs} {
+                padding: 25px 0;
+            }
+        }
+
+        &-clip-shape {
+            position: absolute;
+            inset-inline-start: 0;
+            top: 0;
+            height: 100%;
+            width: 278px;
+            background-color: var(--bd-theme-6);
+            clip-path: polygon(0 0, 100% 0%, 89% 100%, 0% 100%);
+
+            @include rtl {
+                clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 11% 100%);
+            }
+
+            @media #{$xl,$lg} {
+                width: 250px;
+            }
+
+            @media #{$sm,$xs} {
+                width: 200px;
+            }
+        }
+    }
+
+    &-logo {
+        width: 186px;
+        position: relative;
+        z-index: 1;
+
+        img {
+            width: 100%;
+        }
+
+        @media #{$sm} {
+            width: 160px;
+        }
+
+        @media #{$xs} {
+            width: 150px;
+        }
+    }
+
+    &-menu-meta {
+        #{$self}-meta {
+            &-icon {
+                i {
+                    color: var(--bd-common-black);
+                    font-size: 18px;
+                }
+
+                &-2 {
+                    i {
+                        color: var(--bd-theme-1);
+                        font-size: 18px;
+                    }
+                }
+            }
+
+            &:hover {
+                i {
+                    color: var(--bd-theme-1);
+                }
+            }
+
+            &-text {
+                p {
+                    font-size: 18px;
+                }
+            }
+        }
+
+    }
+
+    &-cart {
+        position: relative;
+        margin-inline-end: 8px;
+
+        &:hover {
+            #{$self} {
+                &-cart {
+                    &-wrapper {
+                        opacity: 1;
+                        visibility: visible;
+                        transform: translateY(0px);
+                    }
+                }
+            }
+        }
+
+        &-count {
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--bd-common-white);
+            height: 22px;
+            width: 22px;
+            line-height: 21px;
+            text-align: center;
+            background-color: var(--bd-theme-3);
+            display: inline-block;
+            border-radius: 50%;
+            position: absolute;
+            top: -7px;
+            inset-inline-end: -12px;
+        }
+
+        &-wrapper {
+            position: absolute;
+            width: 350px;
+            height: auto;
+            right: -50%;
+            background-color: var(--bd-common-white);
+            z-index: 9999;
+            top: 100%;
+            padding: 30px 20px;
+            @include transition(.3s);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(30px);
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+
+            @include rtl {
+                right: auto;
+                left: -90%;
+            }
+        }
+
+        &-item {
+            border-bottom: 1px solid rgba(160, 160, 160, 0.47);
+            padding-bottom: 20px;
+            margin-bottom: 10px;
+
+            ul {
+                li {
+                    list-style: none;
+                    display: flex;
+                    align-items: start;
+                    justify-content: space-between;
+                }
+            }
+        }
+
+        &-total {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+
+            p {
+                margin: 0;
+            }
+        }
+
+        &-content {
+            display: flex;
+            gap: 20px;
+        }
+
+        &-title {
+            margin-bottom: 5px;
+            font-weight: 500;
+            line-height: 1.2;
+
+            a {
+                color: var(--bd-common-black);
+            }
+
+            &-wrapper {
+                span {
+                    font-size: 20px;
+                    font-weight: 400;
+
+                }
+            }
+        }
+
+        &-remove {
+            transform: translateY(4px);
+        }
+
+        &-footer {
+            display: flex;
+            gap: 15px;
+            justify-content: space-between;
+
+            a {
+                span {
+                    font-size: 16px;
+                    color: var(--bd-common-white);
+                }
+
+                &.bd-cart-btn-2 {
+                    border: 1px solid var(--bd-theme-2);
+                    background-color: transparent;
+
+                    span {
+                        color: var(--bd-common-black);
+                    }
+
+                    &::before {
+                        background-color: transparent;
+                    }
+
+                    &:hover {
+                        border-color: var(--bd-theme-1);
+                    }
+                }
+            }
+        }
+
+        &-thumb {
+            width: 80px;
+            height: 80px;
+
+            img {
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }
+        }
+    }
+
+    &-btn {
+        margin-inline-start: 25px;
+        display: inline-flex;
+
+        .bd-btn {
+            padding: 0px 48px;
+            height: 50px;
+            line-height: 50px;
+        }
+    }
+
+}
+
+/* logo */
+
+.logo {
+    & img {
+        width: 185px;
+    }
+}
+
+.header-sticky {
+    position: fixed !important;
+    left: 0;
+    margin: auto;
+    top: 0;
+    width: 100%;
+    background-color: var(--bd-common-white);
+    box-shadow: 0 0 60px 0 rgba(0, 0, 0, 0.07);
+    z-index: 99;
+    -webkit-animation: 500ms ease-in-out 0s normal none 1 running fadeInDown;
+    animation: 500ms ease-in-out 0s normal none 1 running fadeInDown;
+    -webkit-box-shadow: 0px 4px 10px rgba(3, 4, 28, 0.1);
+    box-shadow: 0px 4px 10px rgba(3, 4, 28, 0.1);
+}
+
+// HEADER CSS END

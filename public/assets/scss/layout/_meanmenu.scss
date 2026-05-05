@@ -1,0 +1,235 @@
+@use '../utils' as *;
+
+/*----------------------------------------*/
+/*  14. MEANMENU CSS START
+/*----------------------------------------*/
+
+
+
+/* mean menu customize */
+.mean-container a.meanmenu-reveal {
+	display: none;
+}
+
+.mean-container .mean-nav {
+	background: none;
+	margin-top: 0;
+}
+
+.mean-container .mean-bar {
+	padding: 0;
+	min-height: auto;
+	background: none;
+}
+
+.mean-container .mean-nav>ul {
+	padding: 0;
+	margin: 0;
+	width: 100%;
+	list-style-type: none;
+	display: block !important;
+}
+
+.mean-container a.meanmenu-reveal {
+	display: none !important;
+}
+
+.mean-container .mean-nav ul li a {
+	width: 100%;
+	padding: 10px 0;
+	color: var(--bd-common-black);
+	border-top: 1px solid #ebebeb;
+	font-size: 14px;
+	line-height: 1.5;
+	font-weight: 500;
+
+	&:hover {
+		color: var(--bd-theme-1);
+	}
+}
+
+
+.mean-container .mean-nav ul li a.mean-expand {
+	margin-top: 5px;
+	padding: 0 !important;
+	line-height: 14px;
+	border: 0;
+	height: 30px;
+	width: 30px;
+	line-height: 30px;
+	color: var(--bd-common-black);
+	line-height: 30px;
+	top: 0;
+	font-weight: 400;
+
+	&:hover {
+		background: var(--bd-theme-1);
+		color: var(--bd-common-white);
+		border-color: var(--bd-theme-1);
+	}
+
+	i {
+		font-size: 16px;
+	}
+}
+
+.mean-container .mean-nav ul li>a>i {
+	display: none;
+}
+
+.mean-container .mean-nav ul li>a.mean-expand i {
+	display: inline-block;
+}
+
+.mean-container .mean-nav>ul>li:first-child>a {
+	border-top: 0;
+}
+
+.mean-container .mean-nav ul li a.mean-expand.mean-clicked {
+	color: var(--bd-common-white);
+	background-color: var(--bd-theme-1);
+}
+
+.mean-container .mean-nav ul li a.mean-expand.mean-clicked i {
+	transform: rotate(45deg);
+	-webkit-transform: rotate(45deg);
+	-moz-transform: rotate(45deg);
+	-ms-transform: rotate(45deg);
+	-o-transform: rotate(45deg);
+	color: var(--bd-common-white);
+}
+
+.mean-container .mean-nav ul li ul li {
+	.mega-menu-2 {
+		padding-bottom: 6px;
+
+		li {
+			ul {
+				li {
+					a {
+						display: flex;
+						gap: 10px;
+						background: #33C5B6;
+						border-radius: 16px;
+						width: 100%;
+						padding: 12px 15px;
+						margin-bottom: 24px;
+						@include transition(.3s);
+
+						&.mega-btn {
+							background-color: var(--bd-common-white);
+							width: auto;
+							height: 44px;
+							line-height: 44px;
+							padding: 0 30px;
+							text-align: center;
+							display: inline-block;
+							color: var(--bd-common-black);
+						}
+					}
+				}
+			}
+		}
+
+		&-inner {
+			&-num {
+				span {
+					height: 28px;
+					width: 28px;
+					line-height: 28px;
+					text-align: center;
+					font-size: 16px;
+					display: inline-block;
+					border-radius: 50%;
+					color: var(--bd-common-white);
+					background-color: var(--bd-theme-2);
+				}
+			}
+
+			&-title {
+				h6 {
+					font-size: 19px;
+					line-height: 30px;
+					font-weight: 500;
+					margin-bottom: 0;
+					color: var(--bd-common-white);
+					@include transition(.3s);
+				}
+
+				span {
+					color: var(--bd-common-white);
+					@include transition(.3s);
+				}
+			}
+		}
+
+		&-inner-thumb {
+			border-radius: 16px;
+			overflow: hidden;
+			margin: 10px 0;
+
+			img {
+				width: 100%;
+			}
+
+			&::before {
+				content: "";
+				position: absolute;
+				height: 220px;
+				width: 100%;
+				left: 0;
+				bottom: 0;
+				background: linear-gradient(180deg, #FF9B24 0%, rgba(255, 155, 36, 0) 100%);
+				transform: matrix(1, 0, 0, -1, 0, 0);
+			}
+
+			&-content {
+				position: absolute;
+				bottom: 0;
+				left: 50%;
+				text-align: center;
+				padding-left: 0px;
+				transform: translateX(-50%);
+				margin-right: -50%;
+
+				h4 {
+					font-size: 23px;
+					line-height: 39px;
+					color: var(--bd-common-white);
+					margin-bottom: 16px;
+				}
+			}
+		}
+	}
+}
+
+.mean-container .mean-nav ul li li li a {
+	&.mega-program {
+		background: var(--bd-theme-1);
+		border-radius: 16px;
+		margin: 5px 0;
+		text-transform: capitalize;
+	}
+}
+
+.mean-container .mean-nav ul li li li a {
+	&.mega-btn {
+		background-color: var(--bd-common-white);
+		width: auto;
+		height: 44px;
+		line-height: 44px;
+		padding: 0 30px;
+		display: inline-flex;
+		color: var(--bd-common-black);
+		margin-bottom: 20px;
+		border-radius: 50px;
+		justify-content: center;
+		margin-inline-start: 20px;
+
+		&:hover {
+			color: var(--bd-theme-1) !important;
+		}
+	}
+}
+
+// MEANMENU CSS END

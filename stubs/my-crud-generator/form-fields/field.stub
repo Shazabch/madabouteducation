@@ -1,0 +1,7 @@
+                    <div class="form-group col-md-12">
+                        <label class="text-capitalize">{{fieldName}}</label>
+                        <input wire:model.defer="{{objectName}}.{{fieldName}}" type="text" class="form-control @error('{{objectName}}.{{fieldName}}') border border-danger @enderror">
+                        @error('{{objectName}}.{{fieldName}}')
+                            <small class="text-danger">{{ $message }}</small>
+                        @enderror
+                    </div>

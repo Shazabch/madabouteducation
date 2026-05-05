@@ -1,0 +1,61 @@
+@use '../utils' as *;
+
+// 11. SECTION TITLE CSS START HERE
+
+.bd-section {
+    $self: &;
+
+    &-title {
+        position: relative;
+        top: -18px;
+
+        @media #{$xxl} {
+            font-size: 55px;
+        }
+
+        @media #{$xl} {
+            font-size: 45px;
+            top: -13px;
+        }
+
+        @media #{$lg} {
+            font-size: 40px;
+            top: -13px;
+        }
+
+        @media #{$sm,$md} {
+            font-size: 45px;
+            top: -13px;
+        }
+
+        @media #{$xs} {
+            font-size: 30px;
+            top: -10px;
+            padding-bottom: 5px;
+        }
+
+        &-wrapper {
+            &.is-white {
+                & #{$self} {
+                    &-title {
+                        color: var(--bd-common-white);
+                    }
+                }
+
+                p {
+                    color: var(--bd-common-white);
+                }
+            }
+
+            p {
+                br {
+                    @media #{$lg,$md,$sm,$xs} {
+                        display: none;
+                    }
+                }
+            }
+        }
+    }
+}
+
+// SECTION TITLE CSS END HERE

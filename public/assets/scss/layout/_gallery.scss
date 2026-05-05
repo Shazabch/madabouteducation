@@ -1,0 +1,75 @@
+@use '../utils' as *;
+
+//=============== 25. GALLERY CSS START HERE ===============
+
+.bd-gallery {
+    position: relative;
+    $self: &;
+
+    &-thumb {
+        overflow: hidden;
+        border-radius: 16px;
+
+        img {
+            @include transition(.3s);
+            width: 100%;
+        }
+
+        &::before {
+            content: "";
+            height: 100%;
+            width: 100%;
+            @include bd-gradient((180deg, rgba(255, 155, 36, 0.25), var(--bd-common-black) 100%));
+            position: absolute;
+            left: 0;
+            top: 0;
+            border-radius: 16px;
+            opacity: 0;
+            visibility: hidden;
+            @include transition(.3s);
+            z-index: 1;
+        }
+
+        &-wrapper {
+            overflow: hidden;
+
+            &:hover {
+                #{$self} {
+                    &-thumb {
+                        &::before {
+                            opacity: 1;
+                            visibility: visible;
+                        }
+
+                        img {
+                            transform: scale(1.06);
+                        }
+                    }
+
+                    &-icon {
+                        opacity: 1;
+                        visibility: visible;
+                        transition-delay: .2s;
+                    }
+                }
+            }
+        }
+    }
+
+    &-icon {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        color: var(--bd-common-white);
+        opacity: 0;
+        visibility: hidden;
+        z-index: 2;
+
+        a {
+            font-size: 25px;
+        }
+    }
+}
+
+//GALLERY CSS END

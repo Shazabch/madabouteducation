@@ -1,0 +1,56 @@
+@use '../utils' as *;
+
+/*----------------------------------------*/
+/*  04. PRELOADER CSS START
+/*----------------------------------------*/
+
+//preloader 
+#preloader {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	z-index: 9999;
+	background: linear-gradient(100.88deg, #EBFFFE 0.6%, #FFF6EB 100%);
+	transition: .3s;
+}
+
+.preloader {
+	&-thumb {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		position: relative;
+		height: 260px;
+		width: 260px;
+
+		img {
+			width: 200px;
+			position: absolute;
+			top: 50%;
+			left: 50%;
+			transform: translate(-50%, -50%);
+			animation: img-blink 1s ease-in-out infinite alternate;
+		}
+
+		&-wrap {
+			display: flex;
+			justify-content: center;
+			height: 100%;
+			align-items: center;
+		}
+	}
+
+	&-border {
+		border: 2px dashed var(--bd-theme-2);
+		height: 100%;
+		width: 100%;
+		border-radius: 50%;
+		position: absolute;
+		top: 0;
+		left: 0;
+		animation: rotate-infinite 15s linear infinite;
+	}
+}
+//PRELAODER CSS END

@@ -1,0 +1,554 @@
+@use '../utils' as *;
+/*-----------------------------------------------------------------------------------
+
+    Theme Name: KINDEDO Kindergarten & School – HTML5 Template
+    Author: BDevs
+	Category : HTML > Retail > Children
+    Description: Kindedo is perfect for websites: Kindergarten, School, Child Care Centers etc
+    Version: 1.0
+	Created : 4 Feb 2023
+
+-----------------------------------------------------------------------------------
+
+/************ TABLE OF CONTENTS ***************
+
+    01. THEME DEFAULT CSS
+    02. BUTTON CSS
+    03. ANIMATION CSS
+    04. PRELOADER CSS
+    05. BACKGROUND CSS
+    06. PAGINATION CSS
+    07. TAB CSS
+    08. MODAL CSS
+    09. SETTINGS CSS
+    10. SEARCH CSS
+    11. SECTION TITLE CSS
+    12. HEADER CSS
+    13. MAIN MENU CSS
+    14. MEANMENU CSS
+    15. HERO CSS
+    16. CLASS CSS
+    17. PROMOTION CSS
+    18. PROGRAM CSS
+    19. TEACHER CSS
+    20. JOINING CSS
+    21. FAQ CSS
+    22. TESTIMONIAL CSS
+    23. BLOG CSS
+    24. NEWSLETTER CSS
+    25. GALLERY CSS
+    26. PRODUCT CSS
+    27. CATEGORY CSS
+    28. FEEDBACK CSS
+    29. FEATURE CSS
+    30. COUNTER CSS
+    31. ROUTINE CSS
+    32. SHOP CSS
+    33. CONTACT CSS
+    34. ERROR 404 CSS
+    35. FOOTER CSS
+
+
+**********************************************/
+
+
+/*----------------------------------------*/
+/*  01. THEME DEFAULT CSS START
+/*----------------------------------------*/
+
+@import url($font-url);
+
+* {
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+}
+
+/*---------------------------------
+	typography css start 
+---------------------------------*/
+body {
+	font-family: var(--bd-ff-body);
+	font-size: var(--bd-fz-body);
+	font-weight: normal;
+	color: var(--bd-text-body);
+	line-height: 26px;
+}
+
+a {
+	text-decoration: none;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+	font-family: var(--bd-ff-heading);
+	color: var(--bd-heading-primary);
+	margin-top: 0px;
+	font-weight: var(--bd-fw-sbold);
+	line-height: 1.25;
+	@include transition(.3s);
+}
+
+h1 {
+	font-size: var(--bd-fz-h1);
+	font-weight: var(--bd-fw-bold);
+}
+
+h2 {
+	font-size: var(--bd-fz-h2);
+}
+
+h3 {
+	font-size: var(--bd-fz-h3);
+	line-height: 1.5;
+}
+
+h4 {
+	font-size: var(--bd-fz-h4);
+	line-height: 1.7;
+}
+
+h5 {
+	font-size: var(--bd-fz-h5);
+}
+
+h6 {
+	font-size: var(--bd-fz-h6);
+	line-height: 2;
+}
+
+ul {
+	margin: 0px;
+	padding: 0px;
+}
+
+p {
+	font-family: var(--bd-ff-p);
+	font-size: var(--bd-fz-p);
+	font-weight: var(--bd-fw-normal);
+	color: var(--bd-text-body);
+	margin-bottom: 15px;
+	line-height: 30px;
+}
+
+
+a,
+button,
+p,
+input,
+select,
+textarea,
+li,
+.transition-3,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+	@include transition(.3s);
+}
+
+a:focus,
+.button:focus {
+	text-decoration: none;
+	outline: none;
+}
+
+a:focus,
+a:hover {
+	color: inherit;
+	text-decoration: none;
+}
+
+a,
+button {
+	color: inherit;
+	outline: none;
+	border: none;
+	background: transparent;
+}
+
+button:hover {
+	cursor: pointer;
+}
+
+button:focus {
+	outline: 0;
+}
+
+.uppercase {
+	text-transform: uppercase;
+}
+
+.capitalize {
+	text-transform: capitalize;
+}
+
+input {
+	outline: none;
+}
+
+input[type="color"] {
+	appearance: none;
+	-moz-appearance: none;
+	-webkit-appearance: none;
+	background: none;
+	border: 0;
+	cursor: pointer;
+	height: 100%;
+	width: 100%;
+	padding: 0;
+	border-radius: 50%;
+}
+
+a {
+	@include transition(.3s);
+
+	&:hover {
+		color: var(--bd-theme-1);
+	}
+}
+
+
+*::-moz-selection {
+	background: var(--bd-common-black);
+	color: var(--bd-common-white);
+	text-shadow: none;
+}
+
+::-moz-selection {
+	background: var(--bd-common-black);
+	color: var(--bd-common-white);
+	text-shadow: none;
+}
+
+::selection {
+	background: var(--bd-common-black);
+	color: var(--bd-common-white);
+	text-shadow: none;
+}
+
+
+*::-moz-placeholder {
+	color: var(--bd-common-black);
+	font-size: var(--bd-fz-body);
+	opacity: 1;
+}
+
+*::placeholder {
+	color: var(--bd-common-black);
+	font-size: var(--bd-fz-body);
+	opacity: 1;
+}
+
+/*----------------------------------------
+   Flaction customize
+-----------------------------------------*/
+i[class^="flaticon-"] {
+	line-height: 1;
+	top: 2px;
+	position: relative;
+	@include transition(.3s);
+}
+
+/*----------------------------------------
+  Magnific popup iframe
+-----------------------------------------*/
+.mfp-iframe-holder .mfp-content {
+	max-width: 1500px;
+}
+
+/*---------------------------------
+    common classes css start 
+---------------------------------*/
+.radius-24 {
+	border-radius: 24px;
+}
+
+.panel {
+	position: absolute;
+	top: 0;
+	width: 0%;
+	height: 100%;
+	left: 0;
+	background: #fff;
+	z-index: 10;
+	transition: transform .5s ease-in-out;
+	animation: panel 1s;
+	animation-timing-function: cubic-bezier(.785, .135, .15, .86);
+}
+
+.panel-2 {
+	position: absolute;
+	top: 0;
+	width: 0%;
+	height: 100%;
+	right: 0;
+	background: #fff;
+	z-index: 10;
+	transition: transform .5s ease-in-out;
+	animation: panel 1s;
+	animation-timing-function: cubic-bezier(.785, .135, .15, .86);
+}
+
+.w-img {
+	& img {
+		width: 100%;
+	}
+}
+
+.m-img {
+	& img {
+		max-width: 100%;
+	}
+}
+
+.fix {
+	overflow: hidden
+}
+
+.fix-x {
+	overflow-x: hidden;
+}
+
+.clear {
+	clear: both;
+}
+
+
+.z-index-1 {
+	z-index: 1;
+}
+
+.z-index-11 {
+	z-index: 11;
+}
+
+.overflow-y-visible {
+	overflow-x: hidden;
+	overflow-y: visible;
+}
+
+.p-relative {
+	position: relative;
+}
+
+.p-absolute {
+	position: absolute;
+}
+
+.overflow-hidden {
+	overflow: hidden
+}
+
+.include-bg {
+	@include background();
+}
+
+// common hover effect class 
+.hover-clr-1 {
+	@include transition(.3s);
+
+	&:hover {
+		color: var(--bd-theme-1);
+	}
+}
+
+.hover-clr-2 {
+	@include transition(.3s);
+
+	&:hover {
+		color: var(--bd-theme-2);
+	}
+}
+
+.hover-clr-3 {
+	@include transition(.3s);
+
+	&:hover {
+		color: var(--bd-theme-3);
+	}
+}
+
+.hover-clr-4 {
+	@include transition(.3s);
+
+	&:hover {
+		color: var(--bd-theme-9);
+	}
+}
+
+.hover-clr-5 {
+	@include transition(.3s);
+
+	&:hover {
+		color: #00B9F1;
+	}
+}
+
+.hover-clr-6 {
+	@include transition(.3s);
+
+	&:hover {
+		color: #7C81FF;
+	}
+}
+
+/*----------------------------------------
+    Body Overlay 
+-----------------------------------------*/
+
+.body-overlay {
+	background-color: rgba(0, 0, 0, 0.6);
+	height: 100%;
+	width: 100%;
+	position: fixed;
+	top: 0;
+	z-index: 999;
+	left: 0;
+	opacity: 0;
+	visibility: hidden;
+	@include transition(.3s);
+	backdrop-filter: blur(10px);
+
+	&:hover {
+		cursor: pointer;
+	}
+}
+
+.body-overlay.opened {
+	opacity: 1;
+	visibility: visible;
+}
+
+/*----------------------------------------
+    Progress Wrap
+-----------------------------------------*/
+
+.progress-wrap {
+	@media #{$xs} {
+		right: 15px;
+		bottom: 15px;
+	}
+}
+
+
+// basic pagination
+
+.basic-pagination {
+	& ul {
+		& li {
+			display: inline-block;
+
+			&:not(:last-child) {
+				margin-right: 10px;
+			}
+
+			& a,
+			& span {
+				display: inline-block;
+				width: 50px;
+				height: 50px;
+				line-height: 46px;
+				text-align: center;
+				border-radius: 7px;
+				border: 2px solid #f1f1f1;
+				font-size: 18px;
+				font-weight: 600;
+
+				&:hover,
+				&.current {
+					background: var(--bd-theme-1);
+					border-color: var(--bd-theme-1);
+					color: var(--bd-common-white);
+				}
+			}
+		}
+	}
+}
+
+
+// nice select arrow
+
+.nice-select {
+	&::after {
+		border: none;
+		background-color: transparent;
+		@include transform(translateY(-50%));
+		margin-top: 0;
+		right: 15px;
+		content: '\f107';
+		font-family: var(--bd-ff-fontawesome);
+		transform-origin: center;
+		color: var(--bd-common-black);
+		font-weight: 500;
+		height: auto;
+		width: auto;
+	}
+
+	&.open {
+		&::after {
+			@include transform(translateY(-50%) rotate(-180deg));
+		}
+	}
+}
+
+/* cart plus minus default style css */
+
+.cart-plus,
+.cart-minus {
+	width: 25px;
+	height: 30px;
+	border: 2px solid var(--bd-border-1);
+	display: inline-block;
+	vertical-align: middle;
+	text-align: center;
+	font-size: 14px;
+
+	&:hover {
+		cursor: pointer;
+		color: var(--bd-common-white);
+		background: var(--bd-theme-1);
+		border-color: var(--bd-theme-1);
+	}
+}
+
+.cart-input {
+	height: 30px;
+	width: 32px;
+	text-align: center;
+	font-size: 14px;
+	border: none;
+	border-top: 2px solid var(--bd-border-1);
+	border-bottom: 2px solid var(--bd-border-1);
+	display: inline-block;
+	vertical-align: middle;
+	margin: 0 -3px;
+	padding-bottom: 0px;
+
+	&:focus {
+		outline: none;
+	}
+}
+
+/* dropcap */
+
+.bd-dropcap {
+	display: inline-block;
+	font-size: 50px;
+	font-weight: 700;
+	float: left;
+	height: 70px;
+	width: 70px;
+	line-height: 70px;
+	text-align: center;
+	color: var(--bd-common-black);
+	background-color: var(--bd-common-white);
+	box-shadow: 0px 16px 32px 0px rgba(0, 0, 0, 0.06);
+	margin-right: 20px;
+}

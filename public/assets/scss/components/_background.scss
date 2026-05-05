@@ -1,0 +1,67 @@
+@use '../utils' as *;
+
+/*--
+    - Background color
+-----------------------------------------*/
+.grey-bg {
+	background: var(--bd-grey-1);
+}
+
+.grey-bg-2 {
+	background: var(--bd-grey-2);
+}
+
+.white-bg {
+	background: var(--bd-common-white);
+}
+
+.black-bg {
+	background: var(--bd-common-black);
+}
+
+.theme-bg {
+	background-color: var(--bd-theme-1);
+}
+
+.theme-bg-2 {
+	background-color: var(--bd-theme-2);
+}
+
+.theme-bg-3 {
+	background-color: var(--bd-theme-3);
+}
+
+.theme-bg-6 {
+	background-color: var(--bd-theme-6);
+}
+
+.theme-bg-7 {
+	background-color: var(--bd-theme-7);
+}
+
+.theme-bg-8 {
+	background-color: var(--bd-theme-11);
+}
+
+.theme-bg-9 {
+	background-color: var(--bd-theme-9);
+}
+
+.theme-bg-10 {
+	background-color: var(--bd-theme-10);
+}
+
+.theme-bg-11 {
+	background-color: var(--bd-theme-8);
+}
+
+.bd-gradient-bg {
+	background: linear-gradient(100.88deg, #EBFFFE 0.6%, #FFF6EB 100%);
+	transform: rotate(-180deg);
+	position: absolute;
+	top: 0%;
+	right: 0%;
+	left: 0%;
+	bottom: 0%;
+	z-index: -1;
+}

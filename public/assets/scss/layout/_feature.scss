@@ -1,0 +1,185 @@
+@use '../utils' as *;
+
+//=============== 29. FEATURE CSS START HERE ================
+
+.bd-feature {
+    text-align: center;
+    @include transition(.3s);
+    $self: &;
+
+    &-bottom-shape {
+        position: absolute;
+        left: 0;
+        bottom: -5px;
+
+        @media #{$lg,$md,$sm,$xs} {
+            bottom: -10px;
+        }
+
+        img {
+            width: 100%;
+        }
+    }
+
+    &-wrapper {
+        border: 1px solid #fff6;
+        border-radius: 24px;
+        overflow: hidden;
+
+        @media #{$md,$sm,$xs} {
+            border: 0;
+            border-radius: 0;
+        }
+
+        ul {
+            list-style: none;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+
+            @media #{$md,$sm,$xs} {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 25px;
+            }
+
+            @media #{$xs} {
+                grid-template-columns: repeat(1, 1fr);
+            }
+
+            li {
+                border-left: 1px solid #fff6;
+                @include transition(.3s);
+                position: relative;
+
+                @media #{$md,$sm,$xs} {
+                    border: 0;
+                    border-radius: 24px;
+                }
+
+                &::before {
+                    content: "";
+                    position: absolute;
+                    top: 0;
+                    right: 0;
+                    width: 0%;
+                    height: 100%;
+                    border-radius: 24px;
+                    @include transition(.3s);
+                    background: linear-gradient(100.88deg, #EBFFFE 0.6%, #FFF6EB 100%);
+                }
+
+                &:hover {
+                    border-color: transparent;
+                    //    background: linear-gradient(100.88deg, #EBFFFE 0.6%, #FFF6EB 100%);
+                    border-radius: 24px;
+                    @include transition(.3s);
+
+                    &::before {
+                        width: 100%;
+                        right: auto;
+                        left: 0;
+                    }
+
+                    &+li {
+                        border-left: transparent;
+                    }
+                }
+
+                &:first-child {
+                    border-left: 0;
+                }
+            }
+        }
+    }
+
+    &-content {
+        padding: 42px;
+        position: relative;
+        z-index: 1;
+
+        @media #{$lg} {
+            padding: 20px 30px;
+        }
+
+        @media #{$md,$sm,$xs} {
+            border: 1px solid #fff6;
+            border-radius: 24px;
+            padding: 30px;
+        }
+
+        @media #{$sm} {
+            padding: 30px 15px;
+        }
+
+        @media #{$xs} {
+            padding: 30px 20px;
+        }
+
+        p {
+            color: var(--bd-common-white);
+            @include transition(.3s);
+        }
+
+        &:hover {
+            p {
+                color: var(--bd-common-text);
+            }
+
+            #{$self} {
+                &-icon {
+                    background-color: var(--bd-theme-2);
+
+                    i {
+                        color: var(--bd-common-white);
+                    }
+                }
+
+                &-title {
+                    color: var(--bd-common-black);
+                }
+            }
+        }
+    }
+
+    &-icon {
+        font-weight: 600;
+        height: 120px;
+        width: 120px;
+        padding: 0px;
+        background-color: var(--bd-common-white);
+        text-align: center;
+        margin: 0 auto 20px;
+        @include transition(.3s);
+
+        i {
+            font-size: 50px;
+            line-height: 120px;
+            display: inline-block;
+            color: var(--bd-theme-2);
+        }
+
+        &.icon-1 {
+            border-radius: 29% 71% 43% 57% / 30% 41% 59% 70%;
+        }
+
+        &.icon-2 {
+            border-radius: 27% 73% 45% 55% / 27% 41% 59% 73%;
+        }
+
+        &.icon-3 {
+            border-radius: 44% 56% 27% 73% / 45% 59% 41% 55%;
+        }
+
+        &.icon-4 {
+            border-radius: 42% 58% 37% 63% / 52% 37% 63% 48%;
+        }
+    }
+
+    &-title {
+        color: var(--bd-common-white);
+        margin-bottom: 20px;
+        @include transition(.3s);
+    }
+}
+
+// FEATURE CSS END HERE

@@ -1,0 +1,29 @@
+@use '../utils' as *;
+
+/*----------------------------------------*/
+/*  08. MODAL CSS START
+/*----------------------------------------*/
+
+.bd-shop-modal {
+    .modal-dialog {
+        max-width: 950px;
+        margin: 1.75rem auto;
+
+        @media #{$md,$sm,$xs} {
+            margin-left: 20px;
+            margin-right: 20px;
+        }
+
+    }
+
+    .modal-header {
+        border-bottom: 0px;
+
+    }
+
+    .btn-close {
+        font-size: 15px;
+    }
+}
+
+// MODAL CSS START END
