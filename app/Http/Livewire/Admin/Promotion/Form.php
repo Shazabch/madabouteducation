@@ -2,6 +2,7 @@
 
 namespace App\Http\Livewire\Admin\Promotion;
 
+use App\Models\Product;
 use Livewire\Component;
 use App\Models\Promotion;
 use Illuminate\Support\Facades\DB;
@@ -240,8 +241,9 @@ class Form extends Component
         if (!$this->gift_product_id) {
             return;
         }
-
+        $product_name = Product::where('id', $this->gift_product_id)->value('title');
         $this->gifts[] = [
+            'product_name' => $product_name,
             'product_id' => $this->gift_product_id,
         ];
 

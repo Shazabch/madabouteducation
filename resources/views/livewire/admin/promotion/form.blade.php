@@ -136,7 +136,7 @@
                     <tbody>
                         @foreach ($gifts as $index => $gift)
                             <tr>
-                                <td>{{ $gift['product_id'] }}</td>
+                                <td>{{ $gift['product_id'] }} - {{ $gift['product_name'] }}</td>
                                 <td>
                                     <button wire:click="removeGift({{ $index }})"
                                         class="btn btn-danger btn-sm">X</button>
@@ -227,7 +227,7 @@
                             @foreach ($this->products as $product)
                                 <div wire:click="$set('gift_product_id', {{ $product->id }})"
                                     class="p-2 border mb-1 cursor-pointer">
-                                    {{ $product->name }}
+                                    {{ $product->title }}
                                 </div>
                             @endforeach
 
