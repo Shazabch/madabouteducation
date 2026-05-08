@@ -135,31 +135,7 @@
                     </div>
                 </div>
             </div>
-            <!-- <div class="row">
-              <div class="col-12">
-                 <div class="coupon-all">
-                    <div class="coupon d-flex align-items-center">
-                       <input id="coupon_code" class="input-text" name="coupon_code" value="" placeholder="Coupon code"
-                          type="text">
-                       <button name="apply_coupon" type="submit" class="bd-btn">
-                          <span class="bd-btn-inner">
-                             <span class="bd-btn-normal">Apply Coupon</span>
-                             <span class="bd-btn-hover">Apply Coupon</span>
-                          </span>
-                       </button>
-                    </div>
-                    <div class="coupon2">
-                       <button class="bd-btn" name="update_cart" type="submit">
-                          <span class="bd-btn-inner">
-                             <span class="bd-btn-normal">Update Cart</span>
-                             <span class="bd-btn-hover">Update Cart</span>
-                          </span>
-                       </button>
 
-                    </div>
-                 </div>
-              </div>
-           </div> -->
             <div class="row">
                 <div class="col-md-5 ml-auto">
                     <div class="cart-page-total">
@@ -187,6 +163,26 @@
                                 </li>
                             </ul>
                         @endif
+
+                        @if($promoDiscount > 0)
+                            <ul class="mb-30 text-success">
+                                <li>Promo Discount (-{{ getCurrency() }}{{ number_format($promoDiscount, 2) }})
+                                    <span>- {{ getCurrency() }}{{ number_format($promoDiscount, 2) }}</span>
+                                </li>
+                            </ul>
+                        @endif
+
+                        @if(!empty($promotionsData['free_gifts']))
+                            <div class="mb-20">
+                                <strong>Free Gifts:</strong>
+                                <ul>
+                                   @foreach($promotionsData['free_gifts'] as $gift)
+                                      <li class="text-info"><i class="fa fa-gift"></i> Product ID: {{ $gift['product_id'] }} (Free)</li>
+                                   @endforeach
+                                </ul>
+                            </div>
+                        @endif
+
                         <ul class="mb-30">
                             <li class="theme-bg-11">Grand Total
                                 <span>{{ getCurrency() }}{{ number_format($grandTotal, 2) }}</span>

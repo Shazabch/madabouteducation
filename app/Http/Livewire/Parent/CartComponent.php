@@ -19,6 +19,10 @@ class CartComponent extends Component
     public $subscriptionPrice = 0;
     public $grandTotal = 0;
 
+    // Promotion Variables
+    public $promoDiscount = 0;
+    public $promotionsData = [];
+
     protected function getListeners()
     {
         return [
@@ -58,8 +62,39 @@ class CartComponent extends Component
             $this->sst += $order['sst'];
         }
         $this->grandTotal = $this->total + $this->programsNetTotal;
+
+        // Re-evaluate promotions after totals are calculated
+        $this->evaluatePromotions();
+        if ($this->promoDiscount > 0) {
+            $this->grandTotal -= $this->promoDiscount;
+            // ensure it doesn't go negative
+            if ($this->grandTotal < 0) {
+                $this->grandTotal = 0;
+            }
+        }
     }
 
+    public function evaluatePromotions()
+    {
+        $user = auth()->user();
+
+        // Get arrays directly safely
+        $products = $this->products ?: [];
+        $programsInCart = session('cart_programs', []);
+        
+        $applier = app(\App\Services\PromotionApplier::class);
+        $result = $applier->applyToCart($products, $programsInCart, $user);
+
+        if ($result['discount'] > 0 || !empty($result['free_gifts']) || !empty($result['applied_promotions'])) {
+            $this->promoDiscount = $result['discount'];
+            $this->promotionsData = $result;
+            return true;
+        } else {
+            $this->promoDiscount = 0;
+            $this->promotionsData = [];
+            return false;
+        }
+    }
 
     public function addToCart($id, $quantity = 'empty', $variation = null, $price = 0, $months = 0)
     {
@@ -204,6 +239,24 @@ class CartComponent extends Component
         // Retrieving the existing array from the session
         $existingPrograms = collect(session('cart_programs', []));
 
+        // Re-evaluate promotions so we know if there's a group discount
+        // But manually calculate subtotal since calculate() might not have run yet.
+        $tempSubtotal = 0;
+        foreach (session('cart', []) as $p) {
+            $tempSubtotal += ($p['quantity'] * $p['price']);
+        }
+        $tempProgramSubtotal = 0;
+        foreach ($existingPrograms as $prog) {
+            $tempProgramSubtotal += $prog['order']['unit_price'] * count($prog['children']);
+        }
+        
+        $this->subTotal = $tempSubtotal;
+        $this->programsSubTotal = $tempProgramSubtotal;
+        $this->evaluatePromotions();
+
+        // The flag is now fully controlled and centralized by the Applier
+        $allowSiblingDiscount = $this->promotionsData['allow_sibling_discount'] ?? true;
+
         # Group by program_id
         $groupedPrograms = $existingPrograms->groupBy(function ($item) {
             return $item['order']['program_id'];
@@ -238,16 +291,24 @@ class CartComponent extends Component
                 foreach ($programInCart['children'] as $index => $child) {
                     $child['sub_total'] = $programInCart['order']['unit_price'];
                     if ($bProgramme->type == null && ($count > 1 || $iteration > 1)) {
-                        $child['discount'] = (10 / 100) * $child['sub_total'];
+                        if (!$allowSiblingDiscount) {
+                            $child['discount'] = 0;
+                            $child['discount_detail'] = '';
+                        } else {
+                            $child['discount'] = (10 / 100) * $child['sub_total'];
+                            $child['discount_detail'] = $child['discount'] > 0 ? '10% discount for sibling' : '';
+                        }
                     } else if ($bProgramme->type == 'sevent' && ($count > 1 || $iteration > 1)) {
                         $child['discount'] = 0;
+                        $child['discount_detail'] = '';
                     } else if (($bProgramme->type == 'dom' || $bProgramme->type == 'mom') && ($count > 1 || $iteration > 1)) {
                         $child['discount'] = 0;
                         $subTotal += 250;
+                        $child['discount_detail'] = '';
                     } else {
                         $child['discount'] = 0;
+                        $child['discount_detail'] = '';
                     }
-                    $child['discount_detail'] = $child['discount'] > 0 ? '10% discount for sibling' : '';
                     $child['net_total'] = $child['sub_total'] - $child['discount'];
                     $programInCart['children'][$index] = $child;
                     $count++;

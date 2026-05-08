@@ -169,7 +169,21 @@
                               @if($grandDiscount)
                               <tr class="cart-subtotal">
                                  <th>Discount</th>
-                                 <td><span class="amount">{{ getCurrency() }}{{ number_format($grandDiscount , 2) }}</span></td>
+                                 <td><span class="amount">-{{ getCurrency() }}{{ number_format($grandDiscount , 2) }}</span></td>
+                              </tr>
+                              @endif
+                              @if(!empty($promotionsData['free_gifts']))
+                              <tr class="cart-subtotal">
+                                 <td colspan="2">
+                                     <div class="mt-1 mb-1">
+                                         <strong>Free Gifts:</strong>
+                                         <ul style="list-style-type: none; padding-left: 0; margin-bottom: 0;">
+                                            @foreach($promotionsData['free_gifts'] as $gift)
+                                               <li class="text-info"><i class="fa fa-gift"></i> Product ID: {{ $gift['product_id'] }} (Free)</li>
+                                            @endforeach
+                                         </ul>
+                                     </div>
+                                 </td>
                               </tr>
                               @endif
                               <!-- <tr class="shipping">
@@ -186,6 +200,26 @@
                               </tr>
                            </tfoot>
                         </table>
+                     </div>
+
+                     <div class="coupon-section mt-4 mb-4 p-3 border rounded bg-light">
+                        <h6 class="mb-2">Have a coupon?</h6>
+                        <div class="d-flex align-items-center">
+                           <input wire:model.defer="promoCode" wire:keydown.enter.prevent="applyPromoCode" id="coupon_code" class="form-control" name="coupon_code" value="" placeholder="Promo code" type="text" style="max-width: 250px; margin-right: 15px;">
+                           <button wire:click.prevent="applyPromoCode" type="button" class="bd-btn" style="padding: 0 25px; height: 42px; line-height: 42px;">
+                              <span class="bd-btn-inner">
+                                 <span class="bd-btn-normal">Apply</span>
+                                 <span class="bd-btn-hover">Apply</span>
+                              </span>
+                           </button>
+                        </div>
+                        @if($promoCodeError)
+                            <div class="text-danger mt-2"><small>{{ $promoCodeError }}</small></div>
+                        @endif
+                        @if($appliedPromoCode)
+                            <div class="text-success mt-2"><small>Promo code <strong>{{ $appliedPromoCode }}</strong> applied successfully!</small></div>
+                            <button wire:click.prevent="removePromoCode" type="button" class="btn btn-sm btn-danger mt-1">Remove</button>
+                        @endif
                      </div>
 
                      <div class="payment-method">

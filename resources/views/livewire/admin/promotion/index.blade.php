@@ -42,6 +42,7 @@
                         <th>Type</th>
                         <th>Value</th>
                         <th>Usage</th>
+
                         <th>Status</th>
                         <th width="180">Actions</th>
                     </tr>
@@ -57,7 +58,7 @@
                             </td>
 
                             <td>
-                                <span class="badge bg-info text-dark">
+                                <span class="badge p-2 bg-dark text-light">
                                     {{ ucfirst(str_replace('_', ' ', $promo->type)) }}
                                 </span>
                             </td>
@@ -84,8 +85,7 @@
                             </td>
 
                             <td>
-                                <a href="{{ route('admin.promotions.edit', $promo->id) }}"
-                                    class="btn btn-sm btn-primary">
+                                <a href="{{ route('admin.promotions.edit', $promo->id) }}" class="btn btn-sm btn-primary">
                                     Edit
                                 </a>
 

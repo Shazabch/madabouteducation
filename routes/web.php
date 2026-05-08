@@ -38,7 +38,7 @@ Route::get('send-camp-order-mail/{id}', function ($id) {
     Mail::to($order->email)
         ->cc('enquiry@madabouteducation.com')
         ->bcc('shahzaib.ch2019@gmail.com')
-        ->send(new PaymentSuccessfullMail($order,  'camp'));
+        ->send(new PaymentSuccessfullMail($order, 'camp'));
 });
 
 
@@ -200,6 +200,10 @@ Route::middleware(['admin', 'verified'])->prefix('admin')->name('admin.')->group
         Route::view('/', 'admin.promotion.index')->name('index');
 
         Route::view('/create', 'admin.promotion.form')->name('create');
+
+        Route::get('/{id}/edit', function ($id) {
+            return view('admin.promotion.form', ['id' => $id]);
+        })->name('edit');
     });
 
 

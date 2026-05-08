@@ -43,6 +43,15 @@ class CheckoutDetailsComponent extends Component
     public $grandDiscount = 0;
     public $payment_method = 'ipay88';
 
+    // Promotion Variables
+    public $promoCode;
+    public $promoCodeError;
+    public $appliedPromoCode;
+    public $promoDiscount = 0;
+    public $promotionsData = [];
+
+    public $freeGifts = [];
+
     protected function rules()
     {
         return [
@@ -84,19 +93,19 @@ class CheckoutDetailsComponent extends Component
     public function getStates()
     {
         $this->states = [
-            ['name' => 'Johor',  'rate' => '8'],
-            ['name' => 'Kedah',  'rate' => '8'],
-            ['name' => 'Kelantan',  'rate' => '8'],
-            ['name' => 'Melaka',  'rate' => '8'],
-            ['name' => 'Negeri Sembilan',  'rate' => '8'],
-            ['name' => 'Pahang',  'rate' => '8'],
-            ['name' => 'Perak',  'rate' => '8'],
-            ['name' => 'Perlis',  'rate' => '8'],
-            ['name' => 'Pulau Pinang',  'rate' => '8'],
-            ['name' => 'Selangor',  'rate' => '8'],
-            ['name' => 'Terengganu',  'rate' => '8'],
-            ['name' => 'Wilayah Persekutuan Kuala Lumpur',  'rate' => '8'],
-            ['name' => 'Wilayah Persekutuan Putrajaya',  'rate' => '8'],
+            ['name' => 'Johor', 'rate' => '8'],
+            ['name' => 'Kedah', 'rate' => '8'],
+            ['name' => 'Kelantan', 'rate' => '8'],
+            ['name' => 'Melaka', 'rate' => '8'],
+            ['name' => 'Negeri Sembilan', 'rate' => '8'],
+            ['name' => 'Pahang', 'rate' => '8'],
+            ['name' => 'Perak', 'rate' => '8'],
+            ['name' => 'Perlis', 'rate' => '8'],
+            ['name' => 'Pulau Pinang', 'rate' => '8'],
+            ['name' => 'Selangor', 'rate' => '8'],
+            ['name' => 'Terengganu', 'rate' => '8'],
+            ['name' => 'Wilayah Persekutuan Kuala Lumpur', 'rate' => '8'],
+            ['name' => 'Wilayah Persekutuan Putrajaya', 'rate' => '8'],
             ['name' => 'Sabah', 'rate' => '15'],
             ['name' => 'Sarawak', 'rate' => '15'],
             ['name' => 'Wilayah Persekutuan Labuan', 'rate' => '15'],
@@ -117,7 +126,7 @@ class CheckoutDetailsComponent extends Component
 
                     break;
                 } else {
-                    $this->shippingCharges =  0;
+                    $this->shippingCharges = 0;
                 }
             }
         }
@@ -158,6 +167,16 @@ class CheckoutDetailsComponent extends Component
         $this->grandSubTotal = $this->programsSubTotal + $this->subTotal + $this->shippingCharges;
         $this->grandDiscount = $this->programsDiscount + $this->discount;
         $this->grandTotal = $this->netTotal + $this->programsNetTotal;
+
+        $this->evaluatePromotions();
+        if ($this->promoDiscount > 0) {
+            $this->grandTotal -= $this->promoDiscount;
+            $this->grandDiscount += $this->promoDiscount;
+            // ensure it doesn't go negative
+            if ($this->grandTotal < 0) {
+                $this->grandTotal = 0;
+            }
+        }
     }
 
     public function getProducts()
@@ -165,6 +184,65 @@ class CheckoutDetailsComponent extends Component
         $this->products = session('cart') ? session('cart') : [];
         $this->programs = session('cart_programs', []);
         $this->calculate();
+    }
+
+    public function applyPromoCode()
+    {
+        $this->promoCodeError = null;
+
+        if (empty($this->promoCode)) {
+            $this->promoCodeError = 'Please enter a promo code.';
+            return;
+        }
+
+        // Apply forcing an evaluation with this code
+        $result = $this->evaluatePromotions($this->promoCode);
+
+        if (!$result) {
+            $this->promoCodeError = 'Invalid or expired promo code, or requirements not met.';
+        } else {
+            $this->dispatchBrowserEvent('success-notification', ['message' => 'Promo code applied successfully!']);
+            $this->calculate();
+        }
+    }
+
+    public function removePromoCode()
+    {
+        $this->promoCode = null;
+        $this->appliedPromoCode = null;
+        $this->promoDiscount = 0;
+        $this->promotionsData = [];
+        $this->promoCodeError = null;
+        $this->calculate();
+        $this->dispatchBrowserEvent('success-notification', ['message' => 'Promo code removed.']);
+    }
+    public function evaluatePromotions($codeToApply = null)
+    {
+        $code = $codeToApply ?? $this->appliedPromoCode;
+        $user = auth()->user();
+
+        $applier = app(\App\Services\PromotionApplier::class);
+        $result = $applier->applyToCart($this->products, $this->programs, $user, $code);
+
+        // ADD THIS LINE - Store free gifts from result
+        $this->freeGifts = $result['free_gifts'] ?? [];
+
+        if ($result['discount'] > 0 || !empty($result['free_gifts']) || !empty($result['applied_promotions'])) {
+            if ($codeToApply) {
+                $this->appliedPromoCode = $codeToApply;
+            }
+            $this->promoDiscount = $result['discount'];
+            $this->promotionsData = $result;
+            return true;
+        } else {
+            if ($codeToApply) {
+                return false;
+            }
+            $this->promoDiscount = 0;
+            $this->promotionsData = [];
+            $this->freeGifts = [];  // ADD THIS LINE
+            return false;
+        }
     }
 
     public function saveOrder()
@@ -190,7 +268,7 @@ class CheckoutDetailsComponent extends Component
             $subscription = null;
             foreach ($this->products as $product) {
                 if ($product['is_subscription']) {
-                    $subscription =  ProductSubscription::create([
+                    $subscription = ProductSubscription::create([
                         'product_id' => $product['id'],
                         'user_id' => auth()->id(),
                         'order_id' => $this->order->id,
@@ -210,8 +288,25 @@ class CheckoutDetailsComponent extends Component
                     'name' => $product['name'],
                     'price' => $product['price'],
                     'quantity' => $product['quantity'],
-                    'variation' => array_key_exists('variation', $product) ?  $product['variation'] : '',
+                    'variation' => array_key_exists('variation', $product) ? $product['variation'] : '',
                     'total' => $product['price'] * $product['quantity'],
+                ]);
+            }
+            // ADD THIS BLOCK - Save free gifts
+            foreach ($this->freeGifts as $gift) {
+                OrderItem::create([
+                    'order_id' => $this->order->id,
+                    'product_id' => $gift['product_id'],
+                    'name' => $gift['product_name'],
+                    'price' => 0,
+                    'quantity' => $gift['quantity'],
+                    'total' => 0,
+                    'is_free_gift' => true,
+                    'promotion_id' => $gift['promotion_id'],
+                    'promotion_name' => $gift['promotion_name'],
+                    'variation' => $gift['variation'] ?? '',
+                    'is_subscription' => false,
+                    'subscription_months' => null,
                 ]);
             }
 

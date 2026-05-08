@@ -41,8 +41,7 @@
 
                     <div class="col-md-4">
                         <label>Value</label>
-                        <input type="number" class="form-control" wire:model="value"
-                            {{ $type === 'free_gift' ? 'disabled' : '' }}>
+                        <input type="number" class="form-control" wire:model="value" {{ $type === 'free_gift' ? 'disabled' : '' }}>
                     </div>
 
                     <div class="col-md-4">
@@ -103,54 +102,70 @@
                     <tbody>
                         @foreach ($conditions as $index => $condition)
                             <tr>
-                                <td>{{ $condition['type'] }}</td>
-                                <td>{{ $condition['value'] }}</td>
+                                <td>{{ ucwords(str_replace('_', ' ', $condition['type'])) }}</td>
+                                <td>{{ $condition['name_display'] ?? $condition['value'] }}</td>
                                 <td>
-                                    <button wire:click="removeCondition({{ $index }})"
-                                        class="btn btn-danger btn-sm">X</button>
+                                    <button type="button" wire:click="removeCondition({{ $index }})"
+                                        class="btn btn-danger btn-sm" wire:loading.attr="disabled"
+                                        wire:target="removeCondition">X</button>
                                 </td>
                             </tr>
                         @endforeach
                     </tbody>
                 </table>
 
-                <button type="button" wire:click="openConditionModal" class="btn btn-primary btn-sm">
-                    + Add Condition
+                <button type="button" wire:click="openConditionModal" class="btn btn-primary btn-sm"
+                    wire:loading.attr="disabled" wire:target="openConditionModal">
+                    <span wire:loading.remove wire:target="openConditionModal">+ Add Condition</span>
+                    <span wire:loading wire:target="openConditionModal">
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        Loading...
+                    </span>
                 </button>
             </div>
         </div>
 
-        <!-- Gifts -->
-        <div class="card mb-3">
-            <div class="card-body">
-                <h5>Free Gifts</h5>
 
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Product</th>
-                            <th></th>
-                        </tr>
-                    </thead>
 
-                    <tbody>
-                        @foreach ($gifts as $index => $gift)
+        @if ($type === 'free_gift')
+            <!-- Gifts -->
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5>Free Gifts</h5>
+
+                    <table class="table">
+                        <thead>
                             <tr>
-                                <td>{{ $gift['product_id'] }} - {{ $gift['product_name'] }}</td>
-                                <td>
-                                    <button wire:click="removeGift({{ $index }})"
-                                        class="btn btn-danger btn-sm">X</button>
-                                </td>
+                                <th>Product</th>
+                                <th></th>
                             </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+                        </thead>
 
-                <button type="button" wire:click="openGiftModal" class="btn btn-primary btn-sm">
-                    + Add Gift
-                </button>
+                        <tbody>
+                            @foreach ($gifts as $index => $gift)
+                                <tr>
+                                    <td>{{ $gift['product_id'] }} - {{ $gift['product_name'] }}</td>
+                                    <td>
+                                        <button type="button" wire:click="removeGift({{ $index }})"
+                                            class="btn btn-danger btn-sm" wire:loading.attr="disabled"
+                                            wire:target="removeGift">X</button>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+
+                    <button type="button" wire:click="openGiftModal" class="btn btn-primary btn-sm"
+                        wire:loading.attr="disabled" wire:target="openGiftModal">
+                        <span wire:loading.remove wire:target="openGiftModal">+ Add Gift</span>
+                        <span wire:loading wire:target="openGiftModal">
+                            <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                            Loading...
+                        </span>
+                    </button>
+                </div>
             </div>
-        </div>
+        @endif
 
 
         @if ($showConditionModal)
@@ -189,8 +204,11 @@
 
                                 @foreach ($this->parents as $parent)
                                     <div wire:click="$set('condition_value', {{ $parent->id }})"
-                                        class="p-2 border mb-1 cursor-pointer">
+                                        class="p-2 border mb-1 cursor-pointer {{ $condition_value == $parent->id ? 'bg-success text-white' : '' }}">
                                         {{ $parent->name }}
+                                        @if($condition_value == $parent->id)
+                                            <span class="float-end">&check; Selected</span>
+                                        @endif
                                     </div>
                                 @endforeach
                             @endif
@@ -198,8 +216,13 @@
                         </div>
 
                         <div class="modal-footer">
-                            <button wire:click="addConditionFromModal" class="btn btn-success">
-                                Add
+                            <button type="button" wire:click="addConditionFromModal" class="btn btn-success"
+                                wire:loading.attr="disabled" wire:target="addConditionFromModal">
+                                <span wire:loading.remove wire:target="addConditionFromModal">Add</span>
+                                <span wire:loading wire:target="addConditionFromModal">
+                                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                    Adding...
+                                </span>
                             </button>
                         </div>
 
@@ -226,16 +249,24 @@
 
                             @foreach ($this->products as $product)
                                 <div wire:click="$set('gift_product_id', {{ $product->id }})"
-                                    class="p-2 border mb-1 cursor-pointer">
+                                    class="p-2 border mb-1 cursor-pointer {{ $gift_product_id == $product->id ? 'bg-success text-white' : '' }}">
                                     {{ $product->title }}
+                                    @if($gift_product_id == $product->id)
+                                        <span class="float-end">&check; Selected</span>
+                                    @endif
                                 </div>
                             @endforeach
 
                         </div>
 
                         <div class="modal-footer">
-                            <button wire:click="addGiftFromModal" class="btn btn-success">
-                                Add Gift
+                            <button type="button" wire:click="addGiftFromModal" class="btn btn-success"
+                                wire:loading.attr="disabled" wire:target="addGiftFromModal">
+                                <span wire:loading.remove wire:target="addGiftFromModal">Add Gift</span>
+                                <span wire:loading wire:target="addGiftFromModal">
+                                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                                    Adding...
+                                </span>
                             </button>
                         </div>
 
@@ -246,8 +277,11 @@
 
 
         <!-- Submit -->
-        <button type="submit" class="btn btn-success">
-            Save Promotion
+        <button type="submit" class="btn btn-success" wire:loading.attr="disabled" wire:target="save">
+            <span wire:loading.remove wire:target="save">Save Promotion</span>
+            <span wire:loading wire:target="save">
+                <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Saving...
+            </span>
         </button>
 
     </form>

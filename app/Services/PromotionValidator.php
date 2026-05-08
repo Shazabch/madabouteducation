@@ -94,25 +94,29 @@ class PromotionValidator
             return true;
         }
 
-        foreach ($promo->conditions as $condition) {
+        // Group conditions by type (e.g. all parent_ids together, all school_ids together)
+        // For a specific type, it acts as an OR condition (in_array)
+        $groupedConditions = $promo->conditions->groupBy('condition_type');
 
-            switch ($condition->condition_type) {
+        foreach ($groupedConditions as $type => $conditions) {
+            $allowedValues = $conditions->pluck('condition_value')->toArray();
 
+            switch ($type) {
                 case 'school_id':
-                    if (!isset($user->school_id) || $user->school_id != $condition->condition_value) {
+                    if (!isset($user->school_id) || !in_array($user->school_id, $allowedValues)) {
                         return false;
                     }
                     break;
 
                 case 'parent_id':
-                    if ($user->id != $condition->condition_value) {
+                    if (!isset($user->id) || !in_array($user->id, $allowedValues)) {
                         return false;
                     }
                     break;
 
                 // Future-safe: ignore unknown conditions instead of breaking
                 default:
-                    continue;
+                    continue 2;
             }
         }
 

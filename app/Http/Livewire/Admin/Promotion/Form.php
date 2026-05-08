@@ -57,10 +57,10 @@ class Form extends Component
         ];
     }
 
-    public function mount($id = null)
+    public function mount($promoId = null)
     {
-        if ($id) {
-            $this->loadPromotion($id);
+        if ($promoId) {
+            $this->loadPromotion($promoId);
         }
     }
 
@@ -75,6 +75,7 @@ class Form extends Component
         $this->type = $promo->type;
         $this->value = $promo->value;
 
+        // ... rest of loading ...
         $this->is_active = $promo->is_active;
         $this->is_auto = $promo->is_auto;
 
@@ -88,18 +89,32 @@ class Form extends Component
         $this->start_date = optional($promo->start_date)->format('Y-m-d');
         $this->end_date = optional($promo->end_date)->format('Y-m-d');
 
-        // Conditions
+        // Conditions with lookup names
         foreach ($promo->conditions as $condition) {
+            $nameDisplay = $condition->condition_value;
+            if ($condition->condition_type === 'parent_id') {
+                $user = \App\Models\User::find($condition->condition_value);
+                if ($user) {
+                    $nameDisplay = $user->name . ' (ID: ' . $user->id . ')';
+                }
+            } elseif ($condition->condition_type === 'school_id') {
+                // If you have a School model, look it up. Using generic ID fallback.
+                $nameDisplay = 'School ID: ' . $condition->condition_value;
+            }
+
             $this->conditions[] = [
                 'type' => $condition->condition_type,
                 'value' => $condition->condition_value,
+                'name_display' => $nameDisplay,
             ];
         }
 
-        // Gifts
+        // Gifts with lookup names
         foreach ($promo->gifts as $gift) {
+            $product_name = \App\Models\Product::where('id', $gift->product_id)->value('title');
             $this->gifts[] = [
                 'product_id' => $gift->product_id,
+                'product_name' => $product_name ?? 'Unknown Product',
             ];
         }
     }
@@ -187,7 +202,7 @@ class Form extends Component
             }
         });
 
-        session()->flash('message', 'Promotion saved successfully.');
+        $this->dispatchBrowserEvent('success-notification', ['message' => 'Promotion saved successfully!']);
 
         return redirect()->route('admin.promotions.index');
     }
@@ -198,6 +213,7 @@ class Form extends Component
     public function getParentsProperty()
     {
         return \App\Models\User::where('name', 'like', '%' . $this->searchParent . '%')
+            ->where('is_admin', 0)
             ->limit(10)
             ->get();
     }
@@ -221,14 +237,21 @@ class Form extends Component
             return;
         }
 
+        $nameDisplay = $this->condition_value;
+        if ($this->condition_type === 'parent_id') {
+            $user = \App\Models\User::find($this->condition_value);
+            if ($user) $nameDisplay = $user->name;
+        }
+
         $this->conditions[] = [
             'type' => $this->condition_type,
             'value' => $this->condition_value,
+            'name_display' => $nameDisplay,
         ];
 
         $this->showConditionModal = false;
+        $this->dispatchBrowserEvent('success-notification', ['message' => 'Condition added']);
     }
-
 
     public function openGiftModal()
     {
@@ -248,6 +271,7 @@ class Form extends Component
         ];
 
         $this->showGiftModal = false;
+        $this->dispatchBrowserEvent('success-notification', ['message' => 'Gift rule added']);
     }
 
     public function render()

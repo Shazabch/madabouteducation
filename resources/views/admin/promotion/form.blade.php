@@ -5,7 +5,7 @@
 @section('content')
     <div class="row">
         <div class="col-12">
-            @livewire('admin.promotion.form')
+            @livewire('admin.promotion.form', ['promoId' => $id ?? null])
         </div>
     </div>
 @endsection
