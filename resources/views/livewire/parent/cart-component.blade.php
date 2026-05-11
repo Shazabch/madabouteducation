@@ -93,7 +93,6 @@
                                         <td class="product-subtotal">
                                             <span class="amount">{{ getCurrency() }}
                                                 {{ number_format($program['order']['net_total'] ?? '0', 2) }}
-
                                             </span>
                                             @if (in_array($thisProgram->type, ['mom', 'dom']))
                                                 @php
@@ -113,9 +112,7 @@
                                                         "\nSST (8%): +" .
                                                         getCurrency() .
                                                         number_format($program['order']['sst'] ?? 0, 2);
-
                                                 @endphp
-
                                                 <i style="cursor: pointer;"
                                                     class="cursor-pointer fa fa-info-circle text-info"
                                                     data-bs-toggle="tooltip" data-bs-placement="top"
@@ -130,6 +127,49 @@
                                         </td>
                                     </tr>
                                 @endforeach
+
+                                {{-- ============================================================
+                                     FREE GIFTS ROWS
+                                     Uses $freeGifts directly (not $promotionsData['free_gifts'])
+                                     so session-persisted gifts from program triggers are included.
+                                     ============================================================ --}}
+                                @if (!empty($freeGifts))
+                                    @foreach ($freeGifts as $gift)
+                                        <tr style="background-color: #f0fff4;">
+                                            <td>
+                                                <span class="badge"
+                                                    style="background-color: #28a745; color: #fff; font-size: 1.2rem; padding: 6px 8px; border-radius: 6px;">
+                                                    <i class="fa fa-gift"></i>
+                                                </span>
+                                            </td>
+                                            <td class="product-name">
+                                                <span class="fw-bold text-success">
+                                                    {{ $gift['product_name'] }}
+                                                </span>
+                                                <br>
+                                                <small class="text-muted">
+                                                    <i class="fa fa-tag"></i> {{ $gift['promotion_name'] }}
+                                                </small>
+                                            </td>
+                                            <td class="product-price">
+                                                <span class="text-success fw-bold">FREE</span>
+                                            </td>
+                                            <td class="product-quantity text-center">
+                                                {{ $gift['quantity'] ?? 1 }}
+                                            </td>
+                                            <td class="product-subtotal">
+                                                <span class="text-success fw-bold">
+                                                    {{ getCurrency() }}0.00
+                                                </span>
+                                            </td>
+                                            <td class="product-remove">
+                                                {{-- Free gifts cannot be manually removed --}}
+                                                <i class="fa fa-lock text-muted" title="Auto-applied gift"></i>
+                                            </td>
+                                        </tr>
+                                    @endforeach
+                                @endif
+
                             </tbody>
                         </table>
                     </div>
@@ -164,21 +204,30 @@
                             </ul>
                         @endif
 
-                        @if($promoDiscount > 0)
+                        @if ($promoDiscount > 0)
                             <ul class="mb-30 text-success">
-                                <li>Promo Discount (-{{ getCurrency() }}{{ number_format($promoDiscount, 2) }})
+                                <li>Promo Discount
                                     <span>- {{ getCurrency() }}{{ number_format($promoDiscount, 2) }}</span>
                                 </li>
                             </ul>
                         @endif
 
-                        @if(!empty($promotionsData['free_gifts']))
-                            <div class="mb-20">
-                                <strong>Free Gifts:</strong>
-                                <ul>
-                                   @foreach($promotionsData['free_gifts'] as $gift)
-                                      <li class="text-info"><i class="fa fa-gift"></i> Product ID: {{ $gift['product_id'] }} (Free)</li>
-                                   @endforeach
+                        {{-- Free Gifts Summary in totals panel --}}
+                        @if (!empty($freeGifts))
+                            <div class="mb-20 p-2 rounded" style="background-color: #f0fff4; border: 1px solid #c3e6cb;">
+                                <p class="mb-1 fw-bold text-success">
+                                    <i class="fa fa-gift"></i> Free Gift(s) Included:
+                                </p>
+                                <ul class="mb-0" style="list-style: none; padding-left: 0;">
+                                    @foreach ($freeGifts as $gift)
+                                        <li class="text-success" style="font-size: 0.9rem;">
+                                            <i class="fa fa-check-circle"></i>
+                                            {{ $gift['product_name'] }}
+                                            <span class="text-muted" style="font-size: 0.8rem;">
+                                                — via {{ $gift['promotion_name'] }}
+                                            </span>
+                                        </li>
+                                    @endforeach
                                 </ul>
                             </div>
                         @endif

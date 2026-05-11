@@ -6,6 +6,7 @@ use App\Models\Product;
 use App\Models\Program;
 use Livewire\Component;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Log;
 
 class CartComponent extends Component
 {
@@ -22,6 +23,9 @@ class CartComponent extends Component
     // Promotion Variables
     public $promoDiscount = 0;
     public $promotionsData = [];
+
+    // Free Gifts resolved from promotions
+    public $freeGifts = [];
 
     protected function getListeners()
     {
@@ -46,14 +50,17 @@ class CartComponent extends Component
             }
         }
         $this->total = $this->subTotal;
-        #calculate total for programs
+
+        // Calculate total for programs
         $this->programsSubTotal = 0;
         $this->programsDiscount = 0;
         $this->programsNetTotal = 0;
-        #Get Data from session
+
+        // Get data from session
         $programsInCart = collect(session('cart_programs', []));
         $this->sst = 0;
-        #foreach order
+
+        // Foreach order
         foreach ($programsInCart as $program) {
             $order = $program['order'];
             $this->programsSubTotal += $order['sub_total'];
@@ -74,6 +81,11 @@ class CartComponent extends Component
         }
     }
 
+    /**
+     * Evaluate promotions (auto-apply only, no promo code here).
+     * Persists free_gifts to session so CheckoutDetailsComponent
+     * and other components can read them without re-evaluating.
+     */
     public function evaluatePromotions()
     {
         $user = auth()->user();
@@ -82,17 +94,54 @@ class CartComponent extends Component
         $products = $this->products ?: [];
         $programsInCart = session('cart_programs', []);
 
-        $applier = app(\App\Services\PromotionApplier::class);
-        $result = $applier->applyToCart($products, $programsInCart, $user);
+        try {
+            $applier = app(\App\Services\PromotionApplier::class);
+            $result = $applier->applyToCart($products, $programsInCart, $user);
 
-        if ($result['discount'] > 0 || !empty($result['free_gifts']) || !empty($result['applied_promotions'])) {
-            $this->promoDiscount = $result['discount'];
-            $this->promotionsData = $result;
-            return true;
-        } else {
-            $this->promoDiscount = 0;
-            $this->promotionsData = [];
+            // Sync free gifts to session so they are available cart-wide
+            $this->freeGifts = $result['free_gifts'] ?? [];
+            $this->syncFreeGiftsToSession($this->freeGifts);
+
+            if ($result['discount'] > 0 || !empty($result['free_gifts']) || !empty($result['applied_promotions'])) {
+                $this->promoDiscount = $result['discount'];
+                $this->promotionsData = $result;
+                return true;
+            } else {
+                $this->promoDiscount = 0;
+                $this->promotionsData = [];
+                $this->freeGifts = [];
+                $this->syncFreeGiftsToSession([]);
+                return false;
+            }
+        } catch (\Throwable $e) {
+            Log::error('[CartComponent] Exception during evaluatePromotions', [
+                'user_id' => optional($user)->id,
+                'error'   => $e->getMessage(),
+                'trace'   => $e->getTraceAsString(),
+            ]);
             return false;
+        }
+    }
+
+    /**
+     * Persist the resolved free gifts list to session.
+     * This is the single source of truth read by CheckoutDetailsComponent.
+     */
+    private function syncFreeGiftsToSession(array $gifts): void
+    {
+        if (empty($gifts)) {
+            session()->forget('cart_free_gifts');
+            Log::info('[CartComponent] Free gifts cleared from session.');
+        } else {
+            session()->put('cart_free_gifts', $gifts);
+            Log::info('[CartComponent] Free gifts synced to session.', [
+                'gift_count' => count($gifts),
+                'gifts'      => array_map(fn($g) => [
+                    'product_id'     => $g['product_id'],
+                    'product_name'   => $g['product_name'],
+                    'promotion_name' => $g['promotion_name'],
+                ], $gifts),
+            ]);
         }
     }
 
@@ -115,28 +164,27 @@ class CartComponent extends Component
         }
 
         $cartFromSession = session()->get('cart');
-        // if cart is empty then this the first product
         if (!$cartFromSession) {
             $cartFromSession = [];
         }
 
-        // Make cart array to collection
         $cartCollection = collect($cartFromSession);
         $variationImage = null;
         if ($variation) {
             $variationImage = $product->variations()->where('title', $variation)->first()->image;
         }
         $productToAdd = [
-            "id" => $product->id,
-            "name" => $product->title,
-            "quantity" => $product->is_subscription ? 1 : $quantity,
-            "price" => $product->is_subscription ? $price : $product->price,
-            "slug" => $product->slug,
-            "photo" => $variationImage ? $variationImage : $product->main_image,
-            "variation" => $variation,
-            "is_subscription" => $product->is_subscription,
-            "subscription_months" => $months
+            "id"                 => $product->id,
+            "name"               => $product->title,
+            "quantity"           => $product->is_subscription ? 1 : $quantity,
+            "price"              => $product->is_subscription ? $price : $product->price,
+            "slug"               => $product->slug,
+            "photo"              => $variationImage ? $variationImage : $product->main_image,
+            "variation"          => $variation,
+            "is_subscription"    => $product->is_subscription,
+            "subscription_months" => $months,
         ];
+
         $f = null;
         if ($variation) {
             $f = $cartCollection->where('id', $product->id)->where('variation', $variation)->first();
@@ -155,13 +203,11 @@ class CartComponent extends Component
         } else {
             $cartCollection->push($productToAdd);
         }
-        // if($cartCollection->contains('id', $product->id) && $cartCollection->where('id',$product->id)->contains('variation', $variation)){
-        //
-        // }
 
         session()->put('cart', $cartCollection->toArray());
 
-        $this->evaluatePromotions(); // evaluates promotions for programs added
+        // Re-evaluate promotions; free gifts are synced inside evaluatePromotions()
+        $this->evaluatePromotions();
 
         $this->emit('productAdded');
         $this->dispatchBrowserEvent('success-notification', ['message' => 'Product added to cart successfully!']);
@@ -171,7 +217,6 @@ class CartComponent extends Component
     {
         $cartFromSession = session()->get('cart');
         if (!$cartFromSession) {
-            // $cartFromSession=[];
             $this->emit('productRemoved');
             $this->dispatchBrowserEvent('success-notification', ['message' => 'Product removed successfully']);
             return;
@@ -182,14 +227,22 @@ class CartComponent extends Component
             return $item['id'] != $productId || $item['variation'] != $variation;
         });
         session()->put('cart', $cartCollection->toArray());
+
+        // Re-evaluate so gifts are removed if they depended on this product
+        $this->evaluatePromotions();
+
         $this->emit('productRemoved');
         $this->dispatchBrowserEvent('success-notification', ['message' => 'Product removed successfully']);
     }
 
+    /**
+     * Add a program to cart and immediately resolve any free gifts it triggers.
+     */
     public function addProgramToCart($data)
     {
         $uuid = Str::uuid()->toString();
         $data['cart_id'] = $uuid;
+
         // Retrieving the existing array from the session
         $existingPrograms = session('cart_programs', []);
 
@@ -198,9 +251,21 @@ class CartComponent extends Component
 
         // Storing the updated array back in the session
         session()->put('cart_programs', $existingPrograms);
-        $this->evaluatePromotions(); // evaluate promotions after adding a program
-        $this->emit('productAdded');
 
+        Log::info('[CartComponent] Program added to cart.', [
+            'program_id' => $data['order']['program_id'] ?? null,
+            'cart_id'    => $uuid,
+            'user_id'    => optional(auth()->user())->id,
+        ]);
+
+        // Evaluate promotions — this resolves gifts triggered by this program
+        // and persists them to session via syncFreeGiftsToSession()
+        $this->evaluatePromotions();
+
+        // Notify user about any new free gift
+        $this->notifyFreeGiftsIfNew();
+
+        $this->emit('productAdded');
         $this->recalculatePrograms();
 
         $this->dispatchBrowserEvent('success-notification', ['message' => 'Program added to cart successfully!']);
@@ -208,43 +273,54 @@ class CartComponent extends Component
 
     public function removeProgram($cartId)
     {
-        // Retrieving the existing array from the session
+        // Retrieve the program before removal so we can log it
         $existingPrograms = collect(session('cart_programs', []));
+        $removedProgram = $existingPrograms->firstWhere('cart_id', $cartId);
 
-        // Use the filter method to remove a record based on a condition within a nested column
+        // Filter out the removed program
         $existingPrograms = $existingPrograms->filter(function ($program) use ($cartId) {
-            // Replace 'nested_column' with the actual name of your nested column
             return $program['cart_id'] !== $cartId;
         });
 
         // Storing the updated array back in the session
         session()->put('cart_programs', $existingPrograms->toArray());
 
+        Log::info('[CartComponent] Program removed from cart.', [
+            'cart_id'    => $cartId,
+            'program_id' => $removedProgram['order']['program_id'] ?? null,
+            'user_id'    => optional(auth()->user())->id,
+        ]);
+
+        // Re-evaluate promotions so gifts tied to this program are removed from session
+        $this->evaluatePromotions();
+
         $this->recalculatePrograms();
 
         $this->dispatchBrowserEvent('success-notification', ['message' => 'Program Removed From Cart!']);
     }
 
-    // This function is for restoring cart programs while debugging
-    // It Does Not affect any other data
-    public function restore()
+    /**
+     * Dispatch a browser notification if any new free gift was just added to session.
+     * Compares current session gifts against previously known gifts stored in promotionsData.
+     */
+    private function notifyFreeGiftsIfNew(): void
     {
-        $personal_laptop = '[{"order":{"name":null,"email":null,"phone":null,"company":null,"address":null,"notes":null,"booked_for_date":"2023-09-27","program_id":3000,"program_title":"jungle camp","sub_total":200,"discount":10,"vat":0,"net_total":190,"payment_status":"not_paid","children_count":2,"user_id":1000,"group_id":1,"unit_price":"100"},"children":[{"program_order_id":null,"name":"asd","age":"12","passport_no":"123","date_of_birth":"2023-09-27","gender":"Male","nationality":"Azerbaijani","guardian":"{\"name\":\"Zahir Huber\",\"relationship\":\"sad\",\"email\":\"gugi@mailinator.com\",\"contact_no\":\"123\",\"nationality\":\"Azerbaijani\",\"residential_address\":\"Ea qui irure sunt en\"}","guardian2":"{\"name\":\"Zahir Huber\",\"relationship\":\"asdsad\",\"email\":\"gugi@mailinator.com\",\"contact_no\":\"123\",\"nationality\":\"Bahraini\",\"residential_address\":\"Ea qui irure sunt en\"}","questions":"{}","sub_total":"100","discount":0,"discount_detail":"","net_total":100},{"program_order_id":null,"name":"asd","age":"12","passport_no":"123","date_of_birth":"2023-09-27","gender":"Male","nationality":"Azerbaijani","guardian":"{\"name\":\"Zahir Huber\",\"relationship\":\"sad\",\"email\":\"gugi@mailinator.com\",\"contact_no\":\"123\",\"nationality\":\"Azerbaijani\",\"residential_address\":\"Ea qui irure sunt en\"}","guardian2":"{\"name\":\"Zahir Huber\",\"relationship\":\"asdsad\",\"email\":\"gugi@mailinator.com\",\"contact_no\":\"123\",\"nationality\":\"Bahraini\",\"residential_address\":\"Ea qui irure sunt en\"}","questions":"{}","sub_total":"100","discount":10,"discount_detail":"10% discount for sibling","net_total":90}],"bookedProgram":{"program_id":3000,"group_id":1,"program_order_id":null,"title":"jungle camp","venue":"Lahore","start_date":"2023-09-27","end_date":"2023-09-30","age_group":"12-18","age_group_extra_info":"older allowed","price":"100","pick_and_drop":"Thokar","timetable":"[]","time":"8:00 AM"},"cart_id":"4506325a-f17f-4d2a-9750-a37483dca7fb"},{"order":{"name":null,"email":null,"phone":null,"company":null,"address":null,"notes":null,"booked_for_date":"2023-10-20","program_id":3001,"program_title":"Zoo Visit","sub_total":10,"discount":0,"vat":0,"net_total":10,"payment_status":"not_paid","children_count":1,"user_id":1000,"group_id":2,"unit_price":"10"},"children":[{"program_order_id":null,"name":"asd","age":"12","passport_no":"123","date_of_birth":"2023-09-27","gender":"Male","nationality":"Azerbaijani","guardian":"{\"name\":\"Zahir Huber\",\"relationship\":\"sad\",\"email\":\"gugi@mailinator.com\",\"contact_no\":\"123\",\"nationality\":\"Azerbaijani\",\"residential_address\":\"Ea qui irure sunt en\"}","guardian2":"{\"name\":\"Zahir Huber\",\"relationship\":\"asdsad\",\"email\":\"gugi@mailinator.com\",\"contact_no\":\"123\",\"nationality\":\"Bahraini\",\"residential_address\":\"Ea qui irure sunt en\"}","questions":"{}","sub_total":"10","discount":0,"discount_detail":"","net_total":10}],"bookedProgram":{"program_id":3001,"group_id":2,"program_order_id":null,"title":"Zoo Visit","venue":"Lahore","start_date":"2023-10-20","end_date":"2023-10-26","age_group":"12","age_group_extra_info":"34","price":"10","pick_and_drop":"thokar","timetable":"[]","time":"8 am"},"cart_id":"d838bec6-b02c-433b-b6f1-31893882da99"},{"order":{"name":null,"email":null,"phone":null,"company":null,"address":null,"notes":null,"booked_for_date":"2023-10-24","program_id":3001,"program_title":"Zoo Visit","sub_total":100,"discount":10,"vat":0,"net_total":90,"payment_status":"not_paid","children_count":1,"user_id":1000,"group_id":3,"unit_price":"100"},"children":[{"program_order_id":null,"name":"asd","age":"12","passport_no":"123","date_of_birth":"2023-09-27","gender":"Male","nationality":"Azerbaijani","guardian":"{\"name\":\"Zahir Huber\",\"relationship\":\"sad\",\"email\":\"gugi@mailinator.com\",\"contact_no\":\"123\",\"nationality\":\"Azerbaijani\",\"residential_address\":\"Ea qui irure sunt en\"}","guardian2":"{\"name\":\"Zahir Huber\",\"relationship\":\"asdsad\",\"email\":\"gugi@mailinator.com\",\"contact_no\":\"123\",\"nationality\":\"Bahraini\",\"residential_address\":\"Ea qui irure sunt en\"}","questions":"{}","sub_total":"100","discount":10,"discount_detail":"10% discount for sibling","net_total":90}],"bookedProgram":{"program_id":3001,"group_id":3,"program_order_id":null,"title":"Zoo Visit","venue":"Lahore","start_date":"2023-10-24","end_date":"2023-11-02","age_group":"15","age_group_extra_info":"123","price":"100","pick_and_drop":"thokar","timetable":"[]","time":"9 am"},"cart_id":"d506ae38-6028-4bb7-81b8-958898fd67d8"}]';
-        $office_laptop = '[{"order":{"name":null,"email":null,"phone":null,"company":null,"address":null,"notes":null,"booked_for_date":"2003-01-02","program_id":3001,"program_title":"Nature Science: Forest Exploration Program","sub_total":24,"discount":1.2000000000000002,"vat":0,"net_total":22.8,"payment_status":"not_paid","children_count":2,"user_id":1000,"group_id":4,"unit_price":"10"},"children":[{"program_order_id":null,"name":"Amet laudantium fu","age":"12","passport_no":"Blanditiis sint acc","date_of_birth":"2015-04-22","gender":"Male","nationality":"Albanian","guardian":"{\"name\":\"Unde voluptas alias \",\"relationship\":\"Ipsam nulla est inci\",\"email\":\"irfan@gmail.com\",\"contact_no\":\"Doloribus exercitati\",\"nationality\":\"Belarusian\",\"residential_address\":\"Fugiat praesentium v\"}","guardian2":"{\"name\":\"Zahir Huber\",\"relationship\":\"sd\",\"email\":\"gugi@mailinator.com\",\"contact_no\":\"asd\",\"nationality\":\"Afghan\",\"residential_address\":\"Ea qui irure sunt en\"}","questions":"[{\"title\":\"Hello\",\"description\":\"\",\"required\":false,\"is_heading\":true,\"answer_type\":\"\",\"options\":\"\",\"options_array\":[\"\"],\"answer\":\"\"},{\"title\":\"\",\"description\":\"\",\"required\":false,\"is_heading\":false,\"answer_type\":\"text\",\"options\":\"\",\"options_array\":[\"\"],\"answer\":\"ads\"}]","sub_total":"12","discount":0,"discount_detail":"","net_total":12},{"program_order_id":null,"name":"Velit quisquam prae","age":"1","passport_no":"Omnis dolores sit m","date_of_birth":"1989-11-23","gender":"Female","nationality":"Algerian","guardian":"{\"name\":\"Unde voluptas alias \",\"relationship\":\"Ipsam nulla est inci\",\"email\":\"irfan@gmail.com\",\"contact_no\":\"Doloribus exercitati\",\"nationality\":\"Belarusian\",\"residential_address\":\"Fugiat praesentium v\"}","guardian2":"{\"name\":\"Zahir Huber\",\"relationship\":\"as\",\"email\":\"gugi@mailinator.com\",\"contact_no\":\"sad\",\"nationality\":\"American Samoan\",\"residential_address\":\"Ea qui irure sunt en\"}","questions":"[{\"title\":\"Hello\",\"description\":\"\",\"required\":false,\"is_heading\":true,\"answer_type\":\"\",\"options\":\"\",\"options_array\":[\"\"]},{\"title\":\"\",\"description\":\"\",\"required\":false,\"is_heading\":false,\"answer_type\":\"text\",\"options\":\"\",\"options_array\":[\"\"],\"answer\":\"ads\"}]","sub_total":"12","discount":1.2000000000000002,"discount_detail":"10% discount for sibling","net_total":10.8}],"bookedProgram":{"program_id":3001,"group_id":4,"program_order_id":null,"title":"Nature Science: Forest Exploration Program","venue":"Taman Persekutuan Bukit Kiara, TTDI","start_date":"2003-01-02","end_date":null,"age_group":"12-16","age_group_extra_info":"One parent allowed","price":"12","pick_and_drop":"Pick and drop","timetable":"[]","time":"Nostrum maxime id ni"},"cart_id":"2bf55bf3-44a3-4f9e-8635-3577abcd83f8"},{"order":{"name":null,"email":null,"phone":null,"company":null,"address":null,"notes":null,"booked_for_date":"2023-07-18","program_id":3001,"program_title":"Nature Science: Forest Exploration Program","sub_total":2000,"discount":200,"vat":0,"net_total":1800,"payment_status":"not_paid","children_count":2,"user_id":1000,"group_id":2,"unit_price":"1000"},"children":[{"program_order_id":null,"name":"Amet laudantium fu","age":"12","passport_no":"Blanditiis sint acc","date_of_birth":"2015-04-22","gender":"Male","nationality":"Albanian","guardian":"{\"name\":\"Unde voluptas alias \",\"relationship\":\"Ipsam nulla est inci\",\"email\":\"irfan@gmail.com\",\"contact_no\":\"Doloribus exercitati\",\"nationality\":\"Belarusian\",\"residential_address\":\"Fugiat praesentium v\"}","guardian2":"{\"name\":\"Zahir Huber\",\"relationship\":\"asd\",\"email\":\"gugi@mailinator.com\",\"contact_no\":\"asd\",\"nationality\":\"Anguillan\",\"residential_address\":\"Ea qui irure sunt en\"}","questions":"[{\"title\":\"Hello\",\"description\":\"\",\"required\":false,\"is_heading\":true,\"answer_type\":\"\",\"options\":\"\",\"options_array\":[\"\"],\"answer\":\"\"},{\"title\":\"\",\"description\":\"\",\"required\":false,\"is_heading\":false,\"answer_type\":\"text\",\"options\":\"\",\"options_array\":[\"\"],\"answer\":\"asd\"}]","sub_total":"1000","discount":100,"discount_detail":"10% discount for sibling","net_total":900},{"program_order_id":null,"name":"Velit quisquam prae","age":"1","passport_no":"Omnis dolores sit m","date_of_birth":"1989-11-23","gender":"Female","nationality":"American Samoan","guardian":"{\"name\":\"Unde voluptas alias \",\"relationship\":\"Ipsam nulla est inci\",\"email\":\"irfan@gmail.com\",\"contact_no\":\"Doloribus exercitati\",\"nationality\":\"Belarusian\",\"residential_address\":\"Fugiat praesentium v\"}","guardian2":"{\"name\":\"Zahir Huber\",\"relationship\":\"asd\",\"email\":\"gugi@mailinator.com\",\"contact_no\":\"asd\",\"nationality\":\"Angolan\",\"residential_address\":\"Ea qui irure sunt en\"}","questions":"[{\"title\":\"Hello\",\"description\":\"\",\"required\":false,\"is_heading\":true,\"answer_type\":\"\",\"options\":\"\",\"options_array\":[\"\"]},{\"title\":\"\",\"description\":\"\",\"required\":false,\"is_heading\":false,\"answer_type\":\"text\",\"options\":\"\",\"options_array\":[\"\"],\"answer\":\"asd\"}]","sub_total":"1000","discount":100,"discount_detail":"10% discount for sibling","net_total":900}],"bookedProgram":{"program_id":3001,"group_id":2,"program_order_id":null,"title":"Nature Science: Forest Exploration Program","venue":"Taman Persekutuan Bukit Kiara, TTDI","start_date":"2023-07-18","end_date":"2023-07-19","age_group":"12-14","age_group_extra_info":"no parents allowed","price":"1000","pick_and_drop":"Pick and drop","timetable":"[]","time":null},"cart_id":"fc70dcfa-ba8c-4003-93a8-3b178b7a7586"}]';
-        $existingp = json_decode($personal_laptop, true);
-        // $existingp = json_decode($office_laptop, true);
-        session()->put('cart_programs', $existingp);
-        $this->dispatchBrowserEvent('success-notification', ['message' => 'Resotored!']);
+        if (empty($this->freeGifts)) {
+            return;
+        }
+
+        $giftNames = implode(', ', array_map(fn($g) => $g['product_name'], $this->freeGifts));
+        $this->dispatchBrowserEvent('success-notification', [
+            'message' => "🎁 Free gift(s) added to your order: {$giftNames}",
+        ]);
     }
 
     public function recalculatePrograms()
     {
-
         // Retrieving the existing array from the session
         $existingPrograms = collect(session('cart_programs', []));
 
         // Re-evaluate promotions so we know if there's a group discount
-        // But manually calculate subtotal since calculate() might not have run yet.
         $tempSubtotal = 0;
         foreach (session('cart', []) as $p) {
             $tempSubtotal += ($p['quantity'] * $p['price']);
@@ -261,17 +337,17 @@ class CartComponent extends Component
         // The flag is now fully controlled and centralized by the Applier
         $allowSiblingDiscount = $this->promotionsData['allow_sibling_discount'] ?? true;
 
-        # Group by program_id
+        // Group by program_id
         $groupedPrograms = $existingPrograms->groupBy(function ($item) {
             return $item['order']['program_id'];
         });
 
-        # get all the programs which are two times in cart, check by program_id
+        // Get all the programs which are two times in cart, check by program_id
         $filteredGroups = $groupedPrograms->filter(function ($group) {
             return $group->count() > 1;
         });
 
-        #sort the groups by unit_price, highest to lowest
+        // Sort the groups by unit_price, highest to lowest
         $filteredGroups = $filteredGroups->map(function ($group) {
             return $group->sortByDesc('order.unit_price');
         });
@@ -282,14 +358,11 @@ class CartComponent extends Component
             $iteration = 1;
             foreach ($group as $programInCart) {
                 $pId = $programInCart['bookedProgram']['program_id'];
-                # take Full payment from the first price group
-                # Apply discount on all except first price group
                 $bProgramme = Program::where('id', $pId)->first();
                 $subTotal = 0;
                 $discount = 0;
                 $vat = 0;
                 $netTotal = 0;
-
 
                 $count = 1;
                 foreach ($programInCart['children'] as $index => $child) {
@@ -343,38 +416,40 @@ class CartComponent extends Component
 
         $updatedPrograms->each(function ($item) use ($existingPrograms) {
             $cartId = $item['cart_id'];
-
-            // Check if the item with the same cart_id exists in ex$existingPrograms
             if ($existingPrograms->has($cartId)) {
-                // Update the item in ex$existingPrograms with the item from updatedPrograms
                 $existingPrograms[$cartId] = $item;
             }
         });
 
-        // dd($existingPrograms);
-
         $existingPrograms = $existingPrograms->values();
 
-        // dd($existingPrograms);
-
         session()->put('cart_programs', $existingPrograms);
-        // save $updatedCartPrograms in session
-        // $this->dispatchBrowserEvent('success-notification', ['message' => 'Recaalculated!']);
+    }
+
+    // This function is for restoring cart programs while debugging
+    // It does not affect any other data
+    public function restore()
+    {
+        $personal_laptop = '[{"order":{"name":null,"email":null,"phone":null,"company":null,"address":null,"notes":null,"booked_for_date":"2023-09-27","program_id":3000,"program_title":"jungle camp","sub_total":200,"discount":10,"vat":0,"net_total":190,"payment_status":"not_paid","children_count":2,"user_id":1000,"group_id":1,"unit_price":"100"},"children":[{"program_order_id":null,"name":"asd","age":"12","passport_no":"123","date_of_birth":"2023-09-27","gender":"Male","nationality":"Azerbaijani","guardian":"{\"name\":\"Zahir Huber\",\"relationship\":\"sad\",\"email\":\"gugi@mailinator.com\",\"contact_no\":\"123\",\"nationality\":\"Azerbaijani\",\"residential_address\":\"Ea qui irure sunt en\"}","guardian2":"{\"name\":\"Zahir Huber\",\"relationship\":\"asdsad\",\"email\":\"gugi@mailinator.com\",\"contact_no\":\"123\",\"nationality\":\"Bahraini\",\"residential_address\":\"Ea qui irure sunt en\"}","questions":"{}","sub_total":"100","discount":0,"discount_detail":"","net_total":100},{"program_order_id":null,"name":"asd","age":"12","passport_no":"123","date_of_birth":"2023-09-27","gender":"Male","nationality":"Azerbaijani","guardian":"{\"name\":\"Zahir Huber\",\"relationship\":\"sad\",\"email\":\"gugi@mailinator.com\",\"contact_no\":\"123\",\"nationality\":\"Azerbaijani\",\"residential_address\":\"Ea qui irure sunt en\"}","guardian2":"{\"name\":\"Zahir Huber\",\"relationship\":\"asdsad\",\"email\":\"gugi@mailinator.com\",\"contact_no\":\"123\",\"nationality\":\"Bahraini\",\"residential_address\":\"Ea qui irure sunt en\"}","questions":"{}","sub_total":"100","discount":10,"discount_detail":"10% discount for sibling","net_total":90}],"bookedProgram":{"program_id":3000,"group_id":1,"program_order_id":null,"title":"jungle camp","venue":"Lahore","start_date":"2023-09-27","end_date":"2023-09-30","age_group":"12-18","age_group_extra_info":"older allowed","price":"100","pick_and_drop":"Thokar","timetable":"[]","time":"8:00 AM"},"cart_id":"4506325a-f17f-4d2a-9750-a37483dca7fb"}]';
+        $existingp = json_decode($personal_laptop, true);
+        session()->put('cart_programs', $existingp);
+        $this->dispatchBrowserEvent('success-notification', ['message' => 'Restored!']);
     }
 
     public function render()
     {
-        // session()->forget('cart_programs');
         $cartPrograms = collect(session('cart_programs', []));
-        // dd($cartPrograms);
         $productsFromSession = collect(session('cart'));
         if ($productsFromSession->isEmpty()) {
             $this->products = [];
         } else {
             $this->products = $productsFromSession->toArray();
-            // dd($this->products);
         }
         $this->calculate();
+
+        // Sync freeGifts from session so the blade template always has the latest list
+        $this->freeGifts = session('cart_free_gifts', []);
+
         $cartPrograms = collect(session('cart_programs', []));
         return view('livewire.parent.cart-component', compact('cartPrograms'));
     }

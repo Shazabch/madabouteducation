@@ -4,6 +4,13 @@
          width: 14px;
          height: 14px;
       }
+      .free-gift-row {
+         background-color: #f0fff4;
+         border-left: 3px solid #28a745;
+      }
+      .free-gift-row td {
+         padding: 6px 8px;
+      }
    </style>
    @if(count($products) || count($programs))
    <!-- checkout-area start -->
@@ -98,7 +105,6 @@
                                  <option value="{{ $state['name'] }}">{{ $state['name'] }}</option>
                                  @endforeach
                               </select>
-
                               @error('order.state')
                               <small class="text-danger">{{ $message }}</small>
                               @enderror
@@ -129,6 +135,7 @@
                               </tr>
                            </thead>
                            <tbody>
+                              {{-- Regular products --}}
                               @foreach($products as $id => $details)
                               <tr class="cart_item">
                                  <td class="product-name">
@@ -143,6 +150,8 @@
                                  </td>
                               </tr>
                               @endforeach
+
+                              {{-- Programs --}}
                               @foreach($programs as $program)
                               <tr class="cart_item">
                                  <td class="product-name">
@@ -154,6 +163,39 @@
                                  </td>
                               </tr>
                               @endforeach
+
+                              {{-- ============================================================
+                                   FREE GIFT ROWS
+                                   Uses $freeGifts directly (not $promotionsData['free_gifts'])
+                                   so session-persisted gifts from program triggers are included.
+                                   ============================================================ --}}
+                              @if (!empty($freeGifts))
+                                 <tr>
+                                    <td colspan="2" style="padding: 4px 0 2px 0;">
+                                       <small class="text-muted text-uppercase fw-bold" style="letter-spacing: 0.05em;">
+                                          <i class="fa fa-gift"></i> Free Gifts
+                                       </small>
+                                    </td>
+                                 </tr>
+                                 @foreach ($freeGifts as $gift)
+                                 <tr class="cart_item free-gift-row">
+                                    <td class="product-name p-2">
+                                       <span class="text-success fw-bold">
+                                          <i class="fa fa-gift me-1"></i>{{ $gift['product_name'] }}
+                                       </span>
+                                       <strong class="product-quantity"> × {{ $gift['quantity'] ?? 1 }}</strong>
+                                       <br>
+                                       <small class="text-muted">
+                                          <i class="fa fa-tag"></i> {{ $gift['promotion_name'] }}
+                                       </small>
+                                    </td>
+                                    <td class="product-total">
+                                       <span class="text-success fw-bold">FREE</span>
+                                    </td>
+                                 </tr>
+                                 @endforeach
+                              @endif
+
                            </tbody>
                            <tfoot>
                               <tr class="shipping">
@@ -172,26 +214,25 @@
                                  <td><span class="amount">-{{ getCurrency() }}{{ number_format($grandDiscount , 2) }}</span></td>
                               </tr>
                               @endif
-                              @if(!empty($promotionsData['free_gifts']))
-                              <tr class="cart-subtotal">
-                                 <td colspan="2">
-                                     <div class="mt-1 mb-1">
-                                         <strong>Free Gifts:</strong>
-                                         <ul style="list-style-type: none; padding-left: 0; margin-bottom: 0;">
-                                            @foreach($promotionsData['free_gifts'] as $gift)
-                                               <li class="text-info"><i class="fa fa-gift"></i> Product ID: {{ $gift['product_id'] }} (Free)</li>
-                                            @endforeach
-                                         </ul>
-                                     </div>
-                                 </td>
-                              </tr>
+
+                              {{-- Applied promotions breakdown --}}
+                              @if (!empty($promotionsData['applied_promotions']))
+                                 @foreach ($promotionsData['applied_promotions'] as $promo)
+                                    @if ($promo['discount'] > 0)
+                                    <tr class="cart-subtotal">
+                                       <th style="font-size: 0.85rem; color: #28a745;">
+                                          <i class="fa fa-check-circle"></i> {{ $promo['name'] }}
+                                       </th>
+                                       <td>
+                                          <span class="text-success" style="font-size: 0.85rem;">
+                                             -{{ getCurrency() }}{{ number_format($promo['discount'], 2) }}
+                                          </span>
+                                       </td>
+                                    </tr>
+                                    @endif
+                                 @endforeach
                               @endif
-                              <!-- <tr class="shipping">
-                                 <th>Vat</th>
-                                 <td>
-                                     <span class="amount">{{ getCurrency() }}{{ $vat }}</span>
-                                 </td>
-                              </tr> -->
+
                               <tr class="order-total">
                                  <th><span class="text_orange">Order Total</span></th>
                                  <td>
@@ -202,47 +243,81 @@
                         </table>
                      </div>
 
-                     <div class="coupon-section mt-4 mb-4 p-3 border rounded bg-light">
-                        <h6 class="mb-2">Have a coupon?</h6>
-                        <div class="d-flex align-items-center">
-                           <input wire:model.defer="promoCode" wire:keydown.enter.prevent="applyPromoCode" id="coupon_code" class="form-control" name="coupon_code" value="" placeholder="Promo code" type="text" style="max-width: 250px; margin-right: 15px;">
-                           <button wire:click.prevent="applyPromoCode" type="button" class="bd-btn" style="padding: 0 25px; height: 42px; line-height: 42px;">
-                              <span class="bd-btn-inner">
-                                 <span class="bd-btn-normal">Apply</span>
-                                 <span class="bd-btn-hover">Apply</span>
+                     {{-- Coupon Section --}}
+                     @php
+                        $hasAppliedPromo = !empty($appliedPromoCode);
+                        $hasGifts = !empty($freeGifts);
+                        $isCouponDisabled = $hasAppliedPromo || $hasGifts;
+                     @endphp
+                     <div class="coupon-section mt-4 mb-4 p-3 border rounded @if($isCouponDisabled) bg-secondary bg-opacity-10 @else bg-light @endif">
+                        <h6 class="mb-2">
+                           Have a coupon?
+                           @if($isCouponDisabled)
+                              <span class="badge bg-warning ms-2">
+                                 @if($hasAppliedPromo)
+                                    <i class="fa fa-check-circle"></i> Promo Applied
+                                 @elseif($hasGifts)
+                                    <i class="fa fa-gift"></i> Gift Added
+                                 @endif
                               </span>
-                           </button>
-                        </div>
-                        @if($promoCodeError)
-                            <div class="text-danger mt-2"><small>{{ $promoCodeError }}</small></div>
+                           @endif
+                        </h6>
+
+                        @if(!$isCouponDisabled)
+                           {{-- Input and button visible only when no promo applied and no gifts added --}}
+                           <div class="d-flex align-items-center">
+                              <input wire:model.defer="promoCode"
+                                     wire:keydown.enter.prevent="applyPromoCode"
+                                     id="coupon_code"
+                                     class="form-control"
+                                     name="coupon_code"
+                                     placeholder="Promo code"
+                                     type="text"
+                                     style="max-width: 250px; margin-right: 15px;">
+                              <button wire:click.prevent="applyPromoCode" type="button" class="bd-btn" style="padding: 0 25px; height: 42px; line-height: 42px;">
+                                 <span class="bd-btn-inner">
+                                    <span class="bd-btn-normal">Apply</span>
+                                    <span class="bd-btn-hover">Apply</span>
+                                 </span>
+                              </button>
+                           </div>
+                           @if($promoCodeError)
+                               <div class="text-danger mt-2"><small>{{ $promoCodeError }}</small></div>
+                           @endif
+                        @else
+                           {{-- Disabled message when promo or gifts exist --}}
+                           <div class="alert alert-info p-2 mb-0">
+                              <small>
+                                 @if($hasAppliedPromo && $hasGifts)
+                                    <i class="fa fa-info-circle"></i> You have an applied promo and free gifts. Remove the promo to apply another code.
+                                 @elseif($hasAppliedPromo)
+                                    <i class="fa fa-info-circle"></i> You already have a promo applied. Remove it to apply another code.
+                                 @else
+                                    <i class="fa fa-gift"></i> You have free gifts in your order. Remove the item that triggered the gift to apply a promo code.
+                                 @endif
+                              </small>
+                           </div>
                         @endif
+
                         @if($appliedPromoCode)
-                            <div class="text-success mt-2"><small>Promo code <strong>{{ $appliedPromoCode }}</strong> applied successfully!</small></div>
+                            <div class="text-success mt-2">
+                               <small>Promo code <strong>{{ $appliedPromoCode }}</strong> applied successfully!</small>
+                            </div>
                             <button wire:click.prevent="removePromoCode" type="button" class="btn btn-sm btn-danger mt-1">Remove</button>
                         @endif
                      </div>
 
                      <div class="payment-method">
-                        <!-- <h6 class="payment-method-title">Payment Method</h6> -->
                         <div class="order-button-payment mt-20 d-flex justify-content-left">
-                           <!-- <label class="form-check-label d-flex align-items-center gap-2 m-2">
-                              <input type="radio" style="width: 20px;" wire:model="payment_method" value="senangpay">
-                              SenangPay
-                           </label> -->
                            <br>
-                               <!-- <label class="form-check-label d-flex align-items-center gap-2 m-2">
-                              <input type="radio" style="width: 20px;" wire:model="payment_method" value="ipay88">
-                              iPay88
-                           </label><br> -->
                         </div>
-
                         <div class="order-button-payment mt-20">
                            <button type="submit" wire:loading.attr="disabled">
                               Place Order <span wire:loading wire:target="saveOrder" class="spinner-grow spinner-grow-sm"></span>
                            </button>
                         </div>
                         <div wire:loading wire:target="saveOrder" class="text-center text_orange mt-1">
-                           <small><span class="spinner-grow spinner-grow-sm"></span> Please wait , we are processing your order</small>
+                           <small><span class="spinner-grow spinner-grow-sm"></span> Please wait, we are processing your order</small>
                         </div>
                      </div>
                   </div>
