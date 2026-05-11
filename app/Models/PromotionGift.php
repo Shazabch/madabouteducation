@@ -12,6 +12,8 @@ class PromotionGift extends Model
     protected $fillable = [
         'promotion_id',
         'product_id',
+        'trigger_program_id',
+        'trigger_product_id',
     ];
 
     public function promotion()
@@ -22,5 +24,15 @@ class PromotionGift extends Model
     public function product()
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function triggerProgram()
+    {
+        return $this->belongsTo(Program::class, 'trigger_program_id');
+    }
+
+    public function triggerProduct()
+    {
+        return $this->belongsTo(Product::class, 'trigger_product_id');
     }
 }

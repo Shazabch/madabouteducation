@@ -41,7 +41,52 @@ class PromotionValidator
         return
             $this->validateDate($promo) &&
             $this->validateCart($promo, $cart) &&
+            $this->validateTriggers($promo, $cart) &&
             $this->validateConditions($promo, $user);
+    }
+
+    /**
+     * Validate gifts trigger requirements
+     */
+    private function validateTriggers($promo, $cart)
+    {
+        // If promotion doesn't have gifts, this check passes
+        if ($promo->type !== 'free_gift' || $promo->gifts->isEmpty()) {
+            return true;
+        }
+
+        // Check if any gift requires a specific program or product trigger
+        $requiresTrigger = false;
+        $triggerFound = false;
+
+        foreach ($promo->gifts as $gift) {
+            if ($gift->trigger_program_id || $gift->trigger_product_id) {
+                $requiresTrigger = true;
+
+                if (isset($cart->items)) {
+                    foreach ($cart->items as $item) {
+                        if ($gift->trigger_program_id && $item['type'] === 'program' && $item['id'] == $gift->trigger_program_id) {
+                            $triggerFound = true;
+                            break 2; // Found a matching trigger
+                        }
+                        if ($gift->trigger_product_id && $item['type'] === 'product' && $item['id'] == $gift->trigger_product_id) {
+                            $triggerFound = true;
+                            break 2; // Found a matching trigger
+                        }
+                    }
+                }
+            }
+        }
+
+        // If no triggers required at all, validation passes
+        if (!$requiresTrigger) {
+            return true;
+        }
+
+        // If we require triggers but didn't find any, fail validation
+        // NOTE: Alternatively, you might want to still allow the promo code but not grant the gift.
+        // We handle that in Applier. However, if the entire promo is invalid without the trigger, we return false here.
+        return $triggerFound;
     }
 
     /**
@@ -77,10 +122,11 @@ class PromotionValidator
 
         // Applies to (program/product/both)
         if (!empty($promo->applies_to) && $promo->applies_to !== 'both') {
-            if ($promo->applies_to !== $cart->type) {
+            if ($cart->type !== 'both' && $promo->applies_to !== $cart->type) {
                 return false;
             }
         }
+
 
         return true;
     }

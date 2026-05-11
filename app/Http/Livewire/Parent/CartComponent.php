@@ -81,7 +81,7 @@ class CartComponent extends Component
         // Get arrays directly safely
         $products = $this->products ?: [];
         $programsInCart = session('cart_programs', []);
-        
+
         $applier = app(\App\Services\PromotionApplier::class);
         $result = $applier->applyToCart($products, $programsInCart, $user);
 
@@ -160,6 +160,9 @@ class CartComponent extends Component
         // }
 
         session()->put('cart', $cartCollection->toArray());
+
+        $this->evaluatePromotions(); // evaluates promotions for programs added
+
         $this->emit('productAdded');
         $this->dispatchBrowserEvent('success-notification', ['message' => 'Product added to cart successfully!']);
     }
@@ -195,6 +198,7 @@ class CartComponent extends Component
 
         // Storing the updated array back in the session
         session()->put('cart_programs', $existingPrograms);
+        $this->evaluatePromotions(); // evaluate promotions after adding a program
         $this->emit('productAdded');
 
         $this->recalculatePrograms();
@@ -249,7 +253,7 @@ class CartComponent extends Component
         foreach ($existingPrograms as $prog) {
             $tempProgramSubtotal += $prog['order']['unit_price'] * count($prog['children']);
         }
-        
+
         $this->subTotal = $tempSubtotal;
         $this->programsSubTotal = $tempProgramSubtotal;
         $this->evaluatePromotions();

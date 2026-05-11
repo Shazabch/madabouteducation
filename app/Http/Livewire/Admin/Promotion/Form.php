@@ -32,12 +32,13 @@ class Form extends Component
 
     // Temp fields (for modal)
     public $condition_type, $condition_value;
-    public $gift_product_id;
+    public $gift_product_id, $gift_trigger_id;
 
     // Search
     public $searchSchool = '';
     public $searchParent = '';
     public $searchProduct = '';
+    public $searchProgram = '';
 
     protected function rules()
     {
@@ -47,7 +48,7 @@ class Form extends Component
             'value' => 'nullable|numeric|min:0',
             'code' => 'nullable|string|max:100',
 
-            'min_quantity' => 'nullable|integer|min:1',
+            'min_quantity' => 'nullable|integer|min:0',
             'min_amount' => 'nullable|numeric|min:0',
 
             'applies_to' => 'required|in:program,product,both',
@@ -112,9 +113,17 @@ class Form extends Component
         // Gifts with lookup names
         foreach ($promo->gifts as $gift) {
             $product_name = \App\Models\Product::where('id', $gift->product_id)->value('title');
+
+            $trigger_program_name = $gift->trigger_program_id ? \App\Models\Program::where('id', $gift->trigger_program_id)->value('title') : null;
+            $trigger_product_name = $gift->trigger_product_id ? \App\Models\Product::where('id', $gift->trigger_product_id)->value('title') : null;
+
             $this->gifts[] = [
                 'product_id' => $gift->product_id,
                 'product_name' => $product_name ?? 'Unknown Product',
+                'trigger_program_id' => $gift->trigger_program_id,
+                'trigger_program_name' => $trigger_program_name,
+                'trigger_product_id' => $gift->trigger_product_id,
+                'trigger_product_name' => $trigger_product_name,
             ];
         }
     }
@@ -136,7 +145,11 @@ class Form extends Component
 
     public function addGift()
     {
-        $this->gifts[] = ['product_id' => null];
+        $this->gifts[] = [
+            'product_id' => null,
+            'trigger_program_id' => null,
+            'trigger_product_id' => null,
+        ];
     }
 
     public function removeGift($index)
@@ -194,9 +207,11 @@ class Form extends Component
 
             // Save gifts
             foreach ($this->gifts as $gift) {
-                if ($gift['product_id']) {
+                if (!empty($gift['product_id'])) {
                     $promo->gifts()->create([
                         'product_id' => $gift['product_id'],
+                        'trigger_program_id' => $gift['trigger_program_id'] ?? null,
+                        'trigger_product_id' => $gift['trigger_product_id'] ?? null,
                     ]);
                 }
             }
@@ -221,6 +236,13 @@ class Form extends Component
     public function getProductsProperty()
     {
         return \App\Models\Product::where('title', 'like', '%' . $this->searchProduct . '%')
+            ->limit(10)
+            ->get();
+    }
+
+    public function getProgramsProperty()
+    {
+        return \App\Models\Program::where('title', 'like', '%' . $this->searchProgram . '%')
             ->limit(10)
             ->get();
     }
@@ -255,7 +277,7 @@ class Form extends Component
 
     public function openGiftModal()
     {
-        $this->reset(['gift_product_id']);
+        $this->reset(['gift_product_id', 'gift_trigger_id', 'searchProduct', 'searchProgram']);
         $this->showGiftModal = true;
     }
 
@@ -265,9 +287,22 @@ class Form extends Component
             return;
         }
         $product_name = Product::where('id', $this->gift_product_id)->value('title');
+
+        $trigger_program_id = null;
+        $trigger_program_name = null;
+
+        if ($this->gift_trigger_id) {
+            $trigger_program_id = $this->gift_trigger_id;
+            $trigger_program_name = \App\Models\Program::where('id', $this->gift_trigger_id)->value('title');
+        }
+
         $this->gifts[] = [
-            'product_name' => $product_name,
+            'product_name' => $product_name ?? 'Unknown Product',
             'product_id' => $this->gift_product_id,
+            'trigger_program_id' => $trigger_program_id,
+            'trigger_program_name' => $trigger_program_name,
+            'trigger_product_id' => null,
+            'trigger_product_name' => null,
         ];
 
         $this->showGiftModal = false;

@@ -10,6 +10,16 @@
         </div>
     @endif
 
+    @if ($errors->any())
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     <form wire:submit.prevent="save">
 
         <!-- Basic -->
@@ -127,7 +137,7 @@
 
 
 
-        @if ($type === 'free_gift')
+        @if ($type === 'free_gift' && $applies_to === 'program')
             <!-- Gifts -->
             <div class="card mb-3">
                 <div class="card-body">
@@ -137,6 +147,7 @@
                         <thead>
                             <tr>
                                 <th>Product</th>
+                                <th>Trigger Program</th>
                                 <th></th>
                             </tr>
                         </thead>
@@ -145,6 +156,13 @@
                             @foreach ($gifts as $index => $gift)
                                 <tr>
                                     <td>{{ $gift['product_id'] }} - {{ $gift['product_name'] }}</td>
+                                    <td>
+                                        @if(!empty($gift['trigger_program_id']))
+                                            {{ $gift['trigger_program_id'] }} - {{ $gift['trigger_program_name'] }}
+                                        @else
+                                            <span class="text-muted">Global (Any Purchase)</span>
+                                        @endif
+                                    </td>
                                     <td>
                                         <button type="button" wire:click="removeGift({{ $index }})"
                                             class="btn btn-danger btn-sm" wire:loading.attr="disabled"
@@ -244,18 +262,36 @@
 
                         <div class="modal-body">
 
+                            <label>Gift Product</label>
                             <input type="text" wire:model="searchProduct" class="form-control mb-2"
-                                placeholder="Search Product">
+                                placeholder="Search Gift Product">
 
+                            <div style="max-height: 150px; overflow-y: auto;">
                             @foreach ($this->products as $product)
                                 <div wire:click="$set('gift_product_id', {{ $product->id }})"
                                     class="p-2 border mb-1 cursor-pointer {{ $gift_product_id == $product->id ? 'bg-success text-white' : '' }}">
                                     {{ $product->title }}
                                     @if($gift_product_id == $product->id)
-                                        <span class="float-end">&check; Selected</span>
+                                        <span class="float-end">&check;</span>
                                     @endif
                                 </div>
                             @endforeach
+                            </div>
+
+                            <hr>
+                            <label>Trigger Program (Optional - if left blank, applies to all items)</label>
+                            <input type="text" wire:model.debounce.300ms="searchProgram" class="form-control mb-2" placeholder="Search Program">
+                            <div style="max-height: 150px; overflow-y: auto;">
+                            @foreach ($this->programs as $program)
+                                <div wire:click="$set('gift_trigger_id', {{ $program->id }})"
+                                    class="p-2 border mb-1 cursor-pointer {{ $gift_trigger_id == $program->id ? 'bg-success text-white' : '' }}">
+                                    {{ $program->title }}
+                                    @if($gift_trigger_id == $program->id)
+                                        <span class="float-end">&check;</span>
+                                    @endif
+                                </div>
+                            @endforeach
+                            </div>
 
                         </div>
 

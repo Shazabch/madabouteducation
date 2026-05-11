@@ -41,11 +41,27 @@ class PromotionApplier
         if (!$hasProducts && !$hasPrograms)
             $cartType = 'none';
 
+        // Prepare items array for triggers
+        $cartItems = [];
+        foreach ($products as $p) {
+            $cartItems[] = [
+                'type' => 'product',
+                'id' => $p['product_id'] ?? ($p['id'] ?? null),
+            ];
+        }
+        foreach ($programsInCart as $prog) {
+            $cartItems[] = [
+                'type' => 'program',
+                'id' => $prog['program_id'] ?? ($prog['id'] ?? null),
+            ];
+        }
+
         // Create a generic cart object for the validation logic
         $cartMock = (object) [
             'total_quantity' => $cartQuantity,
             'subtotal' => $rawSubtotal,
-            'type' => $cartType
+            'type' => $cartType,
+            'items' => $cartItems,
         ];
 
         return $this->apply($cartMock, $user, $code);
@@ -94,15 +110,39 @@ class PromotionApplier
 
                     // Build free gifts data structure
                     foreach ($promo->gifts as $gift) {
-                        $freeGifts[] = [
-                            'product_id' => $gift->product_id,
-                            'product_name' => $gift->product_name ?? $this->getProductName($gift->product_id),
-                            'quantity' => $gift->quantity ?? 1,
-                            'price' => 0,
-                            'promotion_id' => $promo->id,
-                            'promotion_name' => $promo->name,
-                            'variation' => $gift->variation ?? null,
-                        ];
+                        // Check if gift has specific triggers
+                        $canAddGift = true;
+
+                        // Pass products and programsInCart via full cart structure if possible
+                        // The 'cart' needs to contain item details to match triggers
+                        if ($gift->trigger_program_id || $gift->trigger_product_id) {
+                            $canAddGift = false;
+
+                            if (isset($cart->items)) {
+                                foreach ($cart->items as $item) {
+                                    if ($gift->trigger_program_id && $item['type'] === 'program' && $item['id'] == $gift->trigger_program_id) {
+                                        $canAddGift = true;
+                                        break;
+                                    }
+                                    if ($gift->trigger_product_id && $item['type'] === 'product' && $item['id'] == $gift->trigger_product_id) {
+                                        $canAddGift = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+
+                        if ($canAddGift) {
+                            $freeGifts[] = [
+                                'product_id' => $gift->product_id,
+                                'product_name' => $gift->product_name ?? $this->getProductName($gift->product_id),
+                                'quantity' => 1,
+                                'price' => 0,
+                                'promotion_id' => $promo->id,
+                                'promotion_name' => $promo->name,
+                                'variation' => null,
+                            ];
+                        }
                     }
                     break;
 
