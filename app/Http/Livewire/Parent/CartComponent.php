@@ -207,7 +207,7 @@ class CartComponent extends Component
         session()->put('cart', $cartCollection->toArray());
 
         // Re-evaluate promotions; free gifts are synced inside evaluatePromotions()
-        $this->evaluatePromotions();
+        //$this->evaluatePromotions();
 
         $this->emit('productAdded');
         $this->dispatchBrowserEvent('success-notification', ['message' => 'Product added to cart successfully!']);

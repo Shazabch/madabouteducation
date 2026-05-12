@@ -19,6 +19,9 @@ class Form extends Component
     public $min_quantity, $min_amount, $applies_to = 'both';
     public $priority = 0, $is_stackable = false;
 
+    // limits
+    public $max_uses, $max_uses_per_user;
+
     // Dates
     public $start_date, $end_date;
 
@@ -29,6 +32,7 @@ class Form extends Component
     // Modal controls
     public $showConditionModal = false;
     public $showGiftModal = false;
+
 
     // Temp fields (for modal)
     public $condition_type, $condition_value;
@@ -55,6 +59,8 @@ class Form extends Component
 
             'start_date' => 'nullable|date',
             'end_date' => 'nullable|date|after_or_equal:start_date',
+            'max_uses' => 'nullable|integer|min:0',
+            'max_uses_per_user' => 'nullable|integer|min:0',
         ];
     }
 
@@ -83,6 +89,8 @@ class Form extends Component
         $this->min_quantity = $promo->min_quantity;
         $this->min_amount = $promo->min_amount;
         $this->applies_to = $promo->applies_to;
+        $this->max_uses = $promo->max_uses;
+        $this->max_uses_per_user = $promo->max_uses_per_user;
 
         $this->priority = $promo->priority;
         $this->is_stackable = $promo->is_stackable;
@@ -172,12 +180,12 @@ class Form extends Component
                 ['id' => $this->promoId],
                 [
                     'name' => $this->name,
-                    'code' => $this->is_auto ? null : $this->code,
+                    'code' => $this->code,
                     'type' => $this->type,
                     'value' => $this->type === 'free_gift' ? null : $this->value,
 
                     'is_active' => $this->is_active,
-                    'is_auto' => $this->is_auto,
+                    'is_auto' => $this->type === 'free_gift' ? true : $this->is_auto,
 
                     'min_quantity' => $this->min_quantity,
                     'min_amount' => $this->min_amount,
@@ -188,6 +196,8 @@ class Form extends Component
 
                     'start_date' => $this->start_date,
                     'end_date' => $this->end_date,
+                    'max_uses' => $this->max_uses,
+                    'max_uses_per_user' => $this->max_uses_per_user,
                 ]
             );
 

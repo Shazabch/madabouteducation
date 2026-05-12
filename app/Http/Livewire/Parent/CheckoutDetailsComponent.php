@@ -9,6 +9,7 @@ use App\Models\BookedProgram;
 use App\Models\Country;
 use App\Models\Order;
 use App\Models\OrderItem;
+use App\Models\Product;
 use App\Models\ProductSubscription;
 use App\Models\Program;
 use App\Models\ProgramOrder;
@@ -22,6 +23,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 use App\Traits\WithLockedProperties;
+use App\Services\PromotionApplier;
+use App\Services\PromotionValidator;
 
 class CheckoutDetailsComponent extends Component
 {
@@ -41,10 +44,6 @@ class CheckoutDetailsComponent extends Component
     public $programsSubTotal    = 0;
     public $programsDiscount    = 0;
     public $programsNetTotal    = 0;
-    public $grandSubTotal       = 0;
-    public $grandTotal          = 0;
-    public $grandDiscount       = 0;
-    public $payment_method      = 'ipay88';
 
     // Promotion Variables
     public $promoCode;
@@ -52,7 +51,7 @@ class CheckoutDetailsComponent extends Component
     public $appliedPromoCode;
     public $promoDiscount   = 0;
     public $promotionsData  = [];
-
+    public $payment_method      = 'ipay88';
     // Free gifts resolved by PromotionApplier
     public $freeGifts = [];
 
@@ -144,7 +143,33 @@ class CheckoutDetailsComponent extends Component
         $this->vat      = 0;
         $this->netTotal = ($this->subTotal - $this->discount) + $this->shippingCharges + $this->vat;
 
-        // Calculate total for programs
+        // Strip sibling discounts directly from the program/children objects
+        // before aggregation runs, so totals are naturally correct
+        $allowSiblingDiscount = $this->promotionsData['allow_sibling_discount'] ?? true;
+        if (!$allowSiblingDiscount) {
+            $this->programs = collect($this->programs)->map(function ($program) {
+                foreach ($program['children'] as $index => &$child) {
+                    if ($index > 0 && $child['discount'] > 0) {
+                        $child['discount']        = 0;
+                        $child['discount_detail'] = '';
+                        $child['net_total']       = $child['sub_total'];
+                    }
+                }
+                unset($child);
+
+                // Rebuild order totals from the now-clean children
+                $children                      = collect($program['children']);
+                $program['order']['discount']  = $children->sum('discount');
+                $program['order']['net_total'] = $children->sum('sub_total')
+                    - $program['order']['discount']
+                    + $program['order']['vat']
+                    + $program['order']['sst'];
+
+                return $program;
+            })->toArray(); // ← back to plain array so foreach below works normally
+        }
+
+        // Calculate total for programs (reads the already-cleaned data above)
         $this->programsSubTotal  = 0;
         $this->programsDiscount  = 0;
         $this->programsNetTotal  = 0;
@@ -163,8 +188,7 @@ class CheckoutDetailsComponent extends Component
         $this->grandDiscount = $this->programsDiscount + $this->discount;
         $this->grandTotal    = $this->netTotal + $this->programsNetTotal;
 
-        // Evaluate promotions and merge discount into grand total
-        $this->evaluatePromotions();
+        // Merge promo discount into grand total
         if ($this->promoDiscount > 0) {
             $this->grandTotal    -= $this->promoDiscount;
             $this->grandDiscount += $this->promoDiscount;
@@ -173,7 +197,6 @@ class CheckoutDetailsComponent extends Component
             }
         }
     }
-
     public function getProducts()
     {
         $this->products = session('cart') ? session('cart') : [];
@@ -194,113 +217,108 @@ class CheckoutDetailsComponent extends Component
 
         if (!$result) {
             $this->promoCodeError = 'Invalid or expired promo code, or requirements not met.';
-            Log::info('[CheckoutDetailsComponent] Promo code failed to apply.', [
-                'user_id' => optional(auth()->user())->id,
-                'code'    => $this->promoCode,
-            ]);
-        } else {
-            $this->dispatchBrowserEvent('success-notification', ['message' => 'Promo code applied successfully!']);
-            $this->calculate();
+            return;
         }
+
+        $this->appliedPromoCode = $this->promoCode;
+        $this->promoCode        = null;
+        $this->promoCodeError   = null;
+        $this->calculate();
     }
 
     public function removePromoCode()
     {
-        Log::info('[CheckoutDetailsComponent] Promo code removed.', [
-            'user_id' => optional(auth()->user())->id,
-            'code'    => $this->appliedPromoCode,
-        ]);
-
-        $this->promoCode       = null;
         $this->appliedPromoCode = null;
-        $this->promoDiscount   = 0;
-        $this->promotionsData  = [];
-        $this->promoCodeError  = null;
-        $this->freeGifts       = [];
-
+        $this->promoCode        = null;
+        $this->promoCodeError   = null;
+        $this->promoDiscount    = 0;
+        $this->promotionsData   = [];
         $this->calculate();
-        $this->dispatchBrowserEvent('success-notification', ['message' => 'Promo code removed.']);
+
+        Log::info('[CheckoutDetailsComponent] Promo code removed.', [
+            'user_id' => auth()->id(),
+        ]);
     }
 
     /**
-     * Evaluate applicable promotions.
+     * Evaluate promotions and resolve free gifts
      *
-     * Uses cart_free_gifts from session (written by CartComponent) as a
-     * starting point. When a manual promo code is being tested, always
-     * calls the applier fresh so the code-specific gifts are resolved too.
-     *
-     * @param  string|null $codeToApply  Manual promo code to test, or null for auto-promos.
-     * @return bool  true if any discount/gift was found.
+     * @param string|null $codeToApply - optional promo code to apply (manual)
+     * @return bool - true if promo was applied, false otherwise
      */
     public function evaluatePromotions($codeToApply = null)
     {
-        $code = $codeToApply ?? $this->appliedPromoCode;
         $user = auth()->user();
 
-        try {
-            $applier = app(\App\Services\PromotionApplier::class);
-            $result  = $applier->applyToCart($this->products, $this->programs, $user, $code);
-        } catch (\Throwable $e) {
-            Log::error('[CheckoutDetailsComponent] Exception during evaluatePromotions.', [
-                'user_id' => optional($user)->id,
-                'code'    => $code,
-                'error'   => $e->getMessage(),
-                'trace'   => $e->getTraceAsString(),
-            ]);
-            $this->promoDiscount  = 0;
-            $this->promotionsData = [];
-            $this->freeGifts      = session('cart_free_gifts', []); // fallback to session
-            return false;
+        // Start with session gifts from CartComponent (program-triggered)
+        $sessionGifts = session('cart_free_gifts', []);
+
+        // Call PromotionApplier with actual products and programs
+        // The applier builds its own cart structure internally
+        $applier = app(PromotionApplier::class);
+        $result = $applier->applyToCart(
+            products: $this->products,
+            programsInCart: $this->programs,
+            user: $user,
+            code: $codeToApply
+        );
+
+        // Enrich gift names — look up product names if not already set
+        if (!empty($result['free_gifts'])) {
+            foreach ($result['free_gifts'] as &$gift) {
+                if (empty($gift['product_name'])) {
+                    $product = Product::find($gift['product_id']);
+                    $gift['product_name'] = $product ? $product->name : "Product #{$gift['product_id']}";
+                }
+            }
         }
 
-        // Merge free gifts: prefer fresh result but fall back to session gifts
-        // so that gifts added via CartComponent (program triggers) are not lost.
-        $sessionGifts   = session('cart_free_gifts', []);
-        $freshGifts     = $result['free_gifts'] ?? [];
-
-        // De-duplicate by product_id + promotion_id pair
-        $mergedGifts = collect(array_merge($sessionGifts, $freshGifts))
-            ->unique(fn($g) => $g['product_id'] . '_' . $g['promotion_id'])
-            ->values()
-            ->toArray();
-
-        $this->freeGifts = $mergedGifts;
-
-        if ($result['discount'] > 0 || !empty($result['free_gifts']) || !empty($result['applied_promotions'])) {
-            if ($codeToApply) {
-                $this->appliedPromoCode = $codeToApply;
-                Log::info('[CheckoutDetailsComponent] Manual promo code applied.', [
-                    'user_id'  => optional($user)->id,
-                    'code'     => $codeToApply,
-                    'discount' => $result['discount'],
-                    'gifts'    => count($this->freeGifts),
-                ]);
-            }
-            $this->promoDiscount  = $result['discount'];
-            $this->promotionsData = $result;
-            return true;
+        // Merge session gifts with fresh applier result, de-duplicate
+        if (!empty($result['free_gifts'])) {
+            $allGifts = collect(array_merge($sessionGifts, $result['free_gifts']))
+                ->unique(fn($g) => ($g['product_id'] ?? '') . '_' . ($g['promotion_id'] ?? ''))
+                ->values()
+                ->toArray();
+            $this->freeGifts = $allGifts;
         } else {
-            if ($codeToApply) {
-                // Code was tried but didn't qualify
-                return false;
-            }
-            $this->promoDiscount  = 0;
-            $this->promotionsData = [];
-            // Do NOT clear freeGifts here — session gifts from CartComponent
-            // (program-triggered gifts) should still be shown even when there
-            // is no monetary discount from auto-promos.
             $this->freeGifts = $sessionGifts;
-            return false;
         }
+
+        // Store results
+        $this->promoDiscount  = $result['discount'];
+        $this->promotionsData = $result;
+
+        // If a manual code was applied, check if it succeeded
+        if ($codeToApply) {
+            $hasDiscount = !empty($result['discount']) && $result['discount'] > 0;
+            $hasGifts = !empty($result['free_gifts']);
+
+            if ($hasDiscount || $hasGifts) {
+                Log::info('Manual promo code applied successfully.');
+                return true;  // ✅ SUCCESS!
+            } else {
+                Log::info('Manual promo code failed validation.');
+                return false;  // Legitimately failed
+            }
+        }
+
+        // No code = always return true
+        return true;
     }
 
     public function saveOrder()
     {
-        $this->validate();
-        $this->getProducts();
 
-        // Final re-evaluation before saving so all gifts are current
-        $this->evaluatePromotions($this->appliedPromoCode);
+
+        $this->validate();
+        $this->products = session('cart', []);
+        $this->programs = session('cart_programs', []); // children still have their raw discount values
+
+        $this->evaluatePromotions($this->appliedPromoCode); // sets allow_sibling_discount correctly
+        $this->calculate(); // now cleanly zeroes discount on children if promo is active,
+
+
+
 
         try {
             DB::beginTransaction();
@@ -355,7 +373,9 @@ class CheckoutDetailsComponent extends Component
                 ]);
             }
 
-            // Save free gift order items
+            // ============================================================
+            // Save free gift order items with product names populated
+            // ============================================================
             if (!empty($this->freeGifts)) {
                 Log::info('[CheckoutDetailsComponent] Saving free gift order items.', [
                     'order_id'   => $this->order->id,
@@ -368,16 +388,23 @@ class CheckoutDetailsComponent extends Component
                 ]);
 
                 foreach ($this->freeGifts as $gift) {
+                    // Ensure product_name is populated
+                    $productName = $gift['product_name'] ?? null;
+                    if (empty($productName)) {
+                        $product = Product::find($gift['product_id']);
+                        $productName = $product ? $product->name : "Product #{$gift['product_id']}";
+                    }
+
                     OrderItem::create([
                         'order_id'           => $this->order->id,
                         'product_id'         => $gift['product_id'],
-                        'name'               => $gift['product_name'],
+                        'name'               => $productName,  // ← FIXED: Always populated
                         'price'              => 0,
                         'quantity'           => $gift['quantity'] ?? 1,
                         'total'              => 0,
                         'is_free_gift'       => true,
-                        'promotion_id'       => $gift['promotion_id'],
-                        'promotion_name'     => $gift['promotion_name'],
+                        'promotion_id'       => $gift['promotion_id'] ?? null,
+                        'promotion_name'     => $gift['promotion_name'] ?? null,
                         'variation'          => $gift['variation'] ?? '',
                         'is_subscription'    => false,
                         'subscription_months' => null,
@@ -386,43 +413,48 @@ class CheckoutDetailsComponent extends Component
             }
 
             // ============================================================
-            // Track promotion usage (increment used_count & track per-user)
+            // Track promotion usage (both manual codes and auto-triggered)
             // ============================================================
-            if ($this->appliedPromoCode) {
-                try {
-                    $promotion = Promotion::where('code', $this->appliedPromoCode)->first();
+            if (!empty($this->promotionsData['applied_promotions'])) {
+                foreach ($this->promotionsData['applied_promotions'] as $appliedPromo) {
+                    try {
+                        $promotion = Promotion::find($appliedPromo['id']);
 
-                    if ($promotion) {
-                        // Increment global usage count
-                        PromotionUsage::firstOrCreate(
-                            ['promotion_id' => $promotion->id],
-                            ['user_id' => auth()->id(), 'used_count' => 0]
-                        )->increment('used_count');
+                        if ($promotion) {
+                            // Increment global usage count
+                            PromotionUsage::firstOrCreate(
+                                [
+                                    'promotion_id' => $promotion->id,
+                                    'user_id' => auth()->id() ?? 0,
+                                ],
+                                ['used_count' => 0]
+                            )->increment('used_count');
 
+                            // Increment user-specific usage count (if you have a user_id column)
+                            PromotionUsage::updateOrCreate(
+                                ['promotion_id' => $promotion->id, 'user_id' => auth()->id()],
+                                ['used_count' => DB::raw('used_count + 1')]
+                            );
 
-                        // Increment user-specific usage count (if you have a user_id foreign key)
-                        // Uncomment if your PromotionUsage has a user_id column:
-                        // PromotionUsage::updateOrCreate(
-                        //     ['promotion_id' => $promotion->id, 'user_id' => auth()->id()],
-                        //     ['used_count' => DB::raw('used_count + 1')]
-                        // );
-
-                        Log::info('[CheckoutDetailsComponent] Promotion usage tracked.', [
+                            Log::info('[CheckoutDetailsComponent] Promotion usage tracked.', [
+                                'order_id'      => $this->order->id,
+                                'user_id'       => auth()->id(),
+                                'promotion_id'  => $promotion->id,
+                                'promotion_name' => $promotion->name,
+                                'promotion_type' => $appliedPromo['type'],
+                                'promo_code'    => $promotion->code ?? 'auto-apply',
+                                'total_used'    => $promotion->usages()->sum('used_count') + 1,
+                            ]);
+                        }
+                    } catch (\Exception $e) {
+                        Log::error('[CheckoutDetailsComponent] Error tracking promotion usage.', [
                             'order_id'      => $this->order->id,
                             'user_id'       => auth()->id(),
-                            'promotion_id'  => $promotion->id,
-                            'promotion_code' => $promotion->code,
-                            'total_used'    => $promotion->usages()->sum('used_count') + 1,
+                            'promotion_id'  => $appliedPromo['id'],
+                            'error'         => $e->getMessage(),
                         ]);
+                        // Don't fail the order save — usage tracking is non-critical
                     }
-                } catch (\Exception $e) {
-                    Log::error('[CheckoutDetailsComponent] Error tracking promotion usage.', [
-                        'order_id'  => $this->order->id,
-                        'user_id'   => auth()->id(),
-                        'code'      => $this->appliedPromoCode,
-                        'error'     => $e->getMessage(),
-                    ]);
-                    // Don't fail the order save — usage tracking is non-critical
                 }
             }
 
@@ -476,7 +508,6 @@ class CheckoutDetailsComponent extends Component
             }
 
             $this->order = new Order();
-
         } catch (\Exception $e) {
             Log::error('[CheckoutDetailsComponent] Error creating shop order.', [
                 'user_id' => auth()->id(),
@@ -496,9 +527,9 @@ class CheckoutDetailsComponent extends Component
         $sessionGifts    = session('cart_free_gifts', []);
         $this->freeGifts = !empty($this->freeGifts)
             ? collect(array_merge($sessionGifts, $this->freeGifts))
-                ->unique(fn($g) => $g['product_id'] . '_' . $g['promotion_id'])
-                ->values()
-                ->toArray()
+            ->unique(fn($g) => ($g['product_id'] ?? '') . '_' . ($g['promotion_id'] ?? ''))
+            ->values()
+            ->toArray()
             : $sessionGifts;
 
         return view('livewire.parent.checkout-details-component');

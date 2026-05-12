@@ -29,11 +29,6 @@ class PromotionValidator
 
         $promotions = $query->with(['conditions', 'gifts'])->get();
 
-        Log::info('[PromotionValidator] Promotions fetched from DB.', [
-            'count'  => $promotions->count(),
-            'ids'    => $promotions->pluck('id')->toArray(),
-        ]);
-
         $filtered = $promotions->filter(function ($promo) use ($cart, $user) {
             $valid = $this->isValid($promo, $cart, $user);
 
@@ -47,10 +42,6 @@ class PromotionValidator
             return $valid;
         })->values();
 
-        Log::info('[PromotionValidator] Applicable promotions after filtering.', [
-            'count' => $filtered->count(),
-            'ids'   => $filtered->pluck('id')->toArray(),
-        ]);
 
         return $filtered;
     }
@@ -62,9 +53,87 @@ class PromotionValidator
     {
         return
             $this->validateDate($promo) &&
+            $this->validateMaxUses($promo) &&
+            $this->validateMaxUsesPerUser($promo, $user) &&
             $this->validateCart($promo, $cart) &&
             $this->validateTriggers($promo, $cart) &&
             $this->validateConditions($promo, $user);
+    }
+
+    /**
+     * Validate if promotion has not exceeded global max uses.
+     */
+    private function validateMaxUses($promo): bool
+    {
+        if (!$promo->max_uses) {
+            return true; // No global limit set
+        }
+
+        try {
+            $totalUsed = $promo->usages()->sum('used_count') ?? 0;
+
+            if ($totalUsed >= $promo->max_uses) {
+                Log::info('[PromotionValidator] Promotion has reached max uses.', [
+                    'promo_id'   => $promo->id,
+                    'promo_name' => $promo->name,
+                    'max_uses'   => $promo->max_uses,
+                    'total_used' => $totalUsed,
+                ]);
+                return false;
+            }
+        } catch (\Throwable $e) {
+            Log::error('[PromotionValidator] Error checking max uses.', [
+                'promo_id' => $promo->id,
+                'error'    => $e->getMessage(),
+            ]);
+            return true; // Don't fail if check errors
+        }
+
+        return true;
+    }
+
+    /**
+     * Validate if user has not exceeded per-user max uses.
+     */
+    private function validateMaxUsesPerUser($promo, $user): bool
+    {
+        if (!$promo->max_uses_per_user) {
+            return true; // No per-user limit set
+        }
+
+        if (!$user || !$user->id) {
+            Log::info('[PromotionValidator] No user logged in — skipping per-user max uses check.', [
+                'promo_id' => $promo->id,
+                'promo_name' => $promo->name,
+            ]);
+            return true; // No user logged in, allow to proceed
+        }
+
+        try {
+            $userUsageCount = $promo->usages()
+                ->where('user_id', $user->id)
+                ->sum('used_count') ?? 0;
+
+            if ($userUsageCount >= $promo->max_uses_per_user) {
+                Log::info('[PromotionValidator] User has reached per-user max uses.', [
+                    'promo_id' => $promo->id,
+                    'promo_name' => $promo->name,
+                    'user_id' => $user->id,
+                    'max_uses_per_user' => $promo->max_uses_per_user,
+                    'user_used_count' => $userUsageCount,
+                ]);
+                return false;
+            }
+        } catch (\Throwable $e) {
+            Log::error('[PromotionValidator] Error checking per-user max uses.', [
+                'promo_id' => $promo->id,
+                'user_id'  => $user->id ?? 'unknown',
+                'error'    => $e->getMessage(),
+            ]);
+            return true; // Don't fail if check errors
+        }
+
+        return true;
     }
 
     /**
@@ -115,15 +184,15 @@ class PromotionValidator
         }
 
         if (!$triggerFound) {
-            Log::info('[PromotionValidator] FREE GIFT — trigger required but not found in cart.', [
-                'promo_id'   => $promo->id,
-                'promo_name' => $promo->name,
-                'triggers'   => $promo->gifts->map(fn($g) => [
-                    'trigger_program_id' => $g->trigger_program_id,
-                    'trigger_product_id' => $g->trigger_product_id,
-                ])->toArray(),
-                'cart_items' => $cart->items ?? [],
-            ]);
+            // Log::info('[PromotionValidator] FREE GIFT — trigger required but not found in cart.', [
+            //     'promo_id'   => $promo->id,
+            //     'promo_name' => $promo->name,
+            //     'triggers'   => $promo->gifts->map(fn($g) => [
+            //         'trigger_program_id' => $g->trigger_program_id,
+            //         'trigger_product_id' => $g->trigger_product_id,
+            //     ])->toArray(),
+            //     'cart_items' => $cart->items ?? [],
+            // ]);
         }
 
         return $triggerFound;
@@ -135,21 +204,19 @@ class PromotionValidator
     private function validateDate($promo): bool
     {
         if ($promo->start_date && now()->lt($promo->start_date)) {
-            Log::info('[PromotionValidator] Promotion not yet started.', [
+            Log::info('[PromotionValidator] Promotion not active yet.', [
                 'promo_id'   => $promo->id,
                 'promo_name' => $promo->name,
                 'start_date' => $promo->start_date,
-                'now'        => now(),
             ]);
             return false;
         }
 
         if ($promo->end_date && now()->gt($promo->end_date)) {
-            Log::info('[PromotionValidator] Promotion has expired.', [
+            Log::info('[PromotionValidator] Promotion expired.', [
                 'promo_id'   => $promo->id,
                 'promo_name' => $promo->name,
                 'end_date'   => $promo->end_date,
-                'now'        => now(),
             ]);
             return false;
         }
@@ -162,33 +229,38 @@ class PromotionValidator
      */
     private function validateCart($promo, $cart): bool
     {
-        if (!empty($promo->min_quantity) && $cart->total_quantity < $promo->min_quantity) {
-            Log::info('[PromotionValidator] Cart quantity below minimum.', [
-                'promo_id'      => $promo->id,
-                'promo_name'    => $promo->name,
-                'required'      => $promo->min_quantity,
-                'cart_quantity' => $cart->total_quantity,
-            ]);
-            return false;
-        }
-
         if (!empty($promo->min_amount) && $cart->subtotal < $promo->min_amount) {
-            Log::info('[PromotionValidator] Cart subtotal below minimum amount.', [
-                'promo_id'    => $promo->id,
-                'promo_name'  => $promo->name,
-                'required'    => $promo->min_amount,
-                'subtotal'    => $cart->subtotal,
-            ]);
             return false;
         }
 
-        if (!empty($promo->applies_to) && $promo->applies_to !== 'both') {
-            if ($cart->type !== 'both' && $promo->applies_to !== $cart->type) {
-                Log::info('[PromotionValidator] Cart type does not match applies_to.', [
+        // Strict applies_to check:
+        //
+        //  cart type  │ applies_to = 'product' │ applies_to = 'program' │ applies_to = 'both'
+        // ────────────┼────────────────────────┼────────────────────────┼─────────────────────
+        //  product    │ ✅ pass                │ ❌ fail                 │ ✅ pass
+        //  program    │ ❌ fail                │ ✅ pass                 │ ✅ pass
+        //  both       │ ❌ fail                │ ❌ fail                 │ ✅ pass
+        //
+        // A mixed cart (both) only qualifies for promos explicitly set to 'both'.
+        // A single-type cart qualifies for its own type OR 'both'.
+
+        if (!empty($promo->applies_to)) {
+            $cartType  = $cart->type;   // 'product' | 'program' | 'both'
+            $appliesTo = $promo->applies_to;
+
+            $passes = match ($appliesTo) {
+                'both'    => true,                      // promo accepts any cart
+                'product' => $cartType === 'product',   // promo only for pure-product carts
+                'program' => $cartType === 'program',   // promo only for pure-program carts
+                default   => false,
+            };
+
+            if (!$passes) {
+                Log::info('[PromotionValidator] Promotion skipped — cart type mismatch.', [
                     'promo_id'   => $promo->id,
                     'promo_name' => $promo->name,
-                    'applies_to' => $promo->applies_to,
-                    'cart_type'  => $cart->type,
+                    'applies_to' => $appliesTo,
+                    'cart_type'  => $cartType,
                 ]);
                 return false;
             }
@@ -215,34 +287,18 @@ class PromotionValidator
             switch ($type) {
                 case 'school_id':
                     if (!isset($user->school_id) || !in_array($user->school_id, $allowedValues)) {
-                        Log::info('[PromotionValidator] school_id condition failed.', [
-                            'promo_id'     => $promo->id,
-                            'promo_name'   => $promo->name,
-                            'user_school'  => $user->school_id ?? null,
-                            'allowed'      => $allowedValues,
-                        ]);
                         return false;
                     }
                     break;
 
                 case 'parent_id':
                     if (!isset($user->id) || !in_array($user->id, $allowedValues)) {
-                        Log::info('[PromotionValidator] parent_id condition failed.', [
-                            'promo_id'   => $promo->id,
-                            'promo_name' => $promo->name,
-                            'user_id'    => $user->id ?? null,
-                            'allowed'    => $allowedValues,
-                        ]);
                         return false;
                     }
                     break;
 
                 // Future-safe: ignore unknown condition types
                 default:
-                    Log::warning('[PromotionValidator] Unknown condition type — ignored.', [
-                        'promo_id'       => $promo->id,
-                        'condition_type' => $type,
-                    ]);
                     continue 2;
             }
         }

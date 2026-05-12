@@ -37,6 +37,17 @@
                         <input type="text" class="form-control" wire:model="code" {{ $is_auto ? 'disabled' : '' }}>
                     </div>
                 </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <label>Start Date</label>
+                        <input type="date" class="form-control" wire:model="start_date">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label>End Date</label>
+                        <input type="date" class="form-control" wire:model="end_date">
+                    </div>
+                </div>
 
                 <div class="row mt-3">
                     <div class="col-md-4">
@@ -73,7 +84,17 @@
 
                 <div class="row">
                     <div class="col-md-3">
-                        <label>Min Quantity</label>
+                        <label>Max Uses</label>
+                        <input type="number" class="form-control" wire:model="max_uses">
+                    </div>
+
+                    <div class="col-md-3">
+                        <label>Max Uses Per User</label>
+                        <input type="number" class="form-control" wire:model="max_uses_per_user">
+                    </div>
+
+                    <div class="col-md-3">
+                        <label>Number of Children</label>
                         <input type="number" class="form-control" wire:model="min_quantity">
                     </div>
 
@@ -82,14 +103,14 @@
                         <input type="number" class="form-control" wire:model="min_amount">
                     </div>
 
-                    <div class="col-md-3">
+                    <!-- <div class="col-md-3">
                         <label>Priority</label>
                         <input type="number" class="form-control" wire:model="priority">
-                    </div>
+                    </div> -->
 
-                    <div class="col-md-3 d-flex align-items-center">
+                    <!-- <div class="col-md-3 d-flex align-items-center">
                         <input type="checkbox" wire:model="is_stackable"> &nbsp; Stackable
-                    </div>
+                    </div> -->
                 </div>
 
             </div>

@@ -21,6 +21,8 @@ class Promotion extends Model
         'min_amount',
         'applies_to',
         'is_auto',
+        'max_uses',
+        'max_uses_per_user',
     ];
 
     protected $casts = [
@@ -37,6 +39,7 @@ class Promotion extends Model
 
     public function usages()
     {
+        ///// Sum of used_count across all users for this promotion
         return $this->hasMany(PromotionUsage::class);
     }
 

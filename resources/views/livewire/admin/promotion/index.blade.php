@@ -25,9 +25,9 @@
 
     <!-- Flash Message -->
     @if (session()->has('message'))
-        <div class="alert alert-success">
-            {{ session('message') }}
-        </div>
+    <div class="alert alert-success">
+        {{ session('message') }}
+    </div>
     @endif
 
     <!-- Table -->
@@ -42,7 +42,7 @@
                         <th>Type</th>
                         <th>Value</th>
                         <th>Usage</th>
-
+                        <th>Validity</th>
                         <th>Status</th>
                         <th width="180">Actions</th>
                     </tr>
@@ -50,58 +50,66 @@
 
                 <tbody>
                     @forelse($promotions as $promo)
-                        <tr>
-                            <td>{{ $promo->name }}</td>
+                    <tr>
+                        <td>{{ $promo->name }}</td>
 
-                            <td>
-                                {{ $promo->code ?? '-' }}
-                            </td>
+                        <td>
+                            {{ $promo->code ?? '-' }}
+                        </td>
 
-                            <td>
-                                <span class="badge p-2 bg-dark text-light">
-                                    {{ ucfirst(str_replace('_', ' ', $promo->type)) }}
-                                </span>
-                            </td>
+                        <td>
+                            <span class="badge p-2 bg-dark text-light">
+                                {{ ucfirst(str_replace('_', ' ', $promo->type)) }}
+                            </span>
+                        </td>
 
-                            <td>
-                                @if ($promo->type === 'percentage')
-                                    {{ $promo->value }}%
-                                @elseif($promo->type === 'fixed')
-                                    RM {{ number_format($promo->value, 2) }}
-                                @else
-                                    -
-                                @endif
-                            </td>
+                        <td>
+                            @if ($promo->type === 'percentage')
+                            {{ $promo->value }}%
+                            @elseif($promo->type === 'fixed')
+                            RM {{ number_format($promo->value, 2) }}
+                            @else
+                            -
+                            @endif
+                        </td>
 
-                            <td>
-                                {{ $promo->usages_count }}
-                            </td>
+                        <td>
+                            {{ $promo->usages()->sum('used_count') ?? 0 }} / {{ $promo->max_uses ?? '∞' }}
+                        </td>
+                        <td>
+                            @if (!$promo->start_date && !$promo->end_date)
+                            No expiry
+                            @else
+                            {{ $promo->start_date?->format('Y-m-d') ?? '-' }}
+                            to
+                            {{ $promo->end_date?->format('Y-m-d') ?? '-' }}
+                            @endif
 
-                            <td>
-                                <button wire:click="toggleStatus({{ $promo->id }})"
-                                    class="btn btn-sm {{ $promo->is_active ? 'btn-success' : 'btn-secondary' }}">
-                                    {{ $promo->is_active ? 'Active' : 'Inactive' }}
-                                </button>
-                            </td>
+                        <td>
+                            <button wire:click="toggleStatus({{ $promo->id }})"
+                                class="btn btn-sm {{ $promo->is_active ? 'btn-success' : 'btn-secondary' }}">
+                                {{ $promo->is_active ? 'Active' : 'Inactive' }}
+                            </button>
+                        </td>
 
-                            <td>
-                                <a href="{{ route('admin.promotions.edit', $promo->id) }}" class="btn btn-sm btn-primary">
-                                    Edit
-                                </a>
+                        <td>
+                            <a href="{{ route('admin.promotions.edit', $promo->id) }}" class="btn btn-sm btn-primary">
+                                Edit
+                            </a>
 
-                                <button wire:click="delete({{ $promo->id }})"
-                                    onclick="confirm('Are you sure?') || event.stopImmediatePropagation()"
-                                    class="btn btn-sm btn-danger">
-                                    Delete
-                                </button>
-                            </td>
-                        </tr>
+                            <button wire:click="delete({{ $promo->id }})"
+                                onclick="confirm('Are you sure?') || event.stopImmediatePropagation()"
+                                class="btn btn-sm btn-danger">
+                                Delete
+                            </button>
+                        </td>
+                    </tr>
                     @empty
-                        <tr>
-                            <td colspan="7" class="text-center">
-                                No promotions found
-                            </td>
-                        </tr>
+                    <tr>
+                        <td colspan="7" class="text-center">
+                            No promotions found
+                        </td>
+                    </tr>
                     @endforelse
                 </tbody>
             </table>

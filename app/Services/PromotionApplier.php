@@ -62,15 +62,6 @@ class PromotionApplier
             'items'          => $cartItems,
         ];
 
-        Log::info('[PromotionApplier] applyToCart called.', [
-            'user_id'       => optional($user)->id,
-            'promo_code'    => $code,
-            'cart_type'     => $cartType,
-            'cart_quantity' => $cartQuantity,
-            'subtotal'      => $rawSubtotal,
-            'item_ids'      => $cartItems,
-        ]);
-
         return $this->apply($cartMock, $user, $code);
     }
 
@@ -92,18 +83,10 @@ class PromotionApplier
         }
 
         if ($promotions->isEmpty()) {
-            Log::info('[PromotionApplier] No applicable promotions found.', [
-                'user_id' => optional($user)->id,
-                'code'    => $code,
-            ]);
+
             return $this->emptyResponse();
         }
 
-        Log::info('[PromotionApplier] Applicable promotions found.', [
-            'user_id' => optional($user)->id,
-            'count'   => $promotions->count(),
-            'promos'  => $promotions->map(fn($p) => ['id' => $p->id, 'name' => $p->name, 'type' => $p->type])->toArray(),
-        ]);
 
         // Sort by priority (higher first)
         $promotions = $promotions->sortByDesc('priority');
@@ -117,10 +100,7 @@ class PromotionApplier
 
             // If non-stackable and already applied something → stop
             if (!empty($appliedPromos) && !$promo->is_stackable) {
-                Log::info('[PromotionApplier] Stopping — non-stackable promo skipped because another promo is already applied.', [
-                    'skipped_promo_id'   => $promo->id,
-                    'skipped_promo_name' => $promo->name,
-                ]);
+
                 break;
             }
 
@@ -131,22 +111,12 @@ class PromotionApplier
 
                     case 'percentage':
                         $discount = ($cart->subtotal * $promo->value) / 100;
-                        Log::info('[PromotionApplier] Calculated percentage discount.', [
-                            'promo_id'   => $promo->id,
-                            'promo_name' => $promo->name,
-                            'rate'       => $promo->value,
-                            'subtotal'   => $cart->subtotal,
-                            'discount'   => $discount,
-                        ]);
+
                         break;
 
                     case 'fixed':
                         $discount = $promo->value;
-                        Log::info('[PromotionApplier] Applying fixed discount.', [
-                            'promo_id'   => $promo->id,
-                            'promo_name' => $promo->name,
-                            'discount'   => $discount,
-                        ]);
+
                         break;
 
                     case 'free_gift':
@@ -168,11 +138,7 @@ class PromotionApplier
                                             $item['id'] == $gift->trigger_program_id
                                         ) {
                                             $canAddGift = true;
-                                            Log::info('[PromotionApplier] Free gift trigger matched via program.', [
-                                                'promo_id'          => $promo->id,
-                                                'gift_product_id'   => $gift->product_id,
-                                                'trigger_program_id' => $gift->trigger_program_id,
-                                            ]);
+
                                             break;
                                         }
                                         if (
@@ -181,11 +147,7 @@ class PromotionApplier
                                             $item['id'] == $gift->trigger_product_id
                                         ) {
                                             $canAddGift = true;
-                                            Log::info('[PromotionApplier] Free gift trigger matched via product.', [
-                                                'promo_id'          => $promo->id,
-                                                'gift_product_id'   => $gift->product_id,
-                                                'trigger_product_id' => $gift->trigger_product_id,
-                                            ]);
+
                                             break;
                                         }
                                     }
@@ -205,21 +167,14 @@ class PromotionApplier
                                 $giftEntry = [
                                     'product_id'     => $gift->product_id,
                                     'product_name'   => $gift->product_name ?? $this->getProductName($gift->product_id),
-                                    'quantity'       => 1,
+                                    'quantity'       => $gift->quantity ?? 1,
                                     'price'          => 0,
                                     'promotion_id'   => $promo->id,
                                     'promotion_name' => $promo->name,
-                                    'variation'      => null,
+                                    'variation'      => $gift->variation ?? null,
                                 ];
                                 $freeGifts[]          = $giftEntry;
                                 $giftsAddedThisPromo[] = $giftEntry;
-
-                                Log::info('[PromotionApplier] Free gift added.', [
-                                    'promo_id'     => $promo->id,
-                                    'promo_name'   => $promo->name,
-                                    'product_id'   => $gift->product_id,
-                                    'product_name' => $giftEntry['product_name'],
-                                ]);
                             }
                         }
 
@@ -232,20 +187,11 @@ class PromotionApplier
                         break;
 
                     default:
-                        Log::warning('[PromotionApplier] Unknown promotion type encountered.', [
-                            'promo_id'   => $promo->id,
-                            'promo_name' => $promo->name,
-                            'type'       => $promo->type,
-                        ]);
+
                         $discount = 0;
                 }
             } catch (\Throwable $e) {
-                Log::error('[PromotionApplier] Exception while processing promotion.', [
-                    'promo_id'   => $promo->id,
-                    'promo_name' => $promo->name,
-                    'error'      => $e->getMessage(),
-                    'trace'      => $e->getTraceAsString(),
-                ]);
+
                 continue; // skip this broken promo, don't halt the whole cart
             }
 
@@ -257,12 +203,11 @@ class PromotionApplier
                 $totalDiscount += $discount;
 
                 // Group Discount vs Sibling Discount business rule
-                if ($promo->min_quantity >= 5) {
-                    $allowSiblingDiscount = false;
-                    Log::info('[PromotionApplier] Sibling discount disabled — group promo with min_quantity >= 5.', [
-                        'promo_id'     => $promo->id,
-                        'min_quantity' => $promo->min_quantity,
-                    ]);
+                $totalChildrens = $cart->total_quantity ?? 0;
+                if (is_numeric($promo->min_quantity) && $promo->min_quantity > 0) {
+                    if ($totalChildrens >= $promo->min_quantity) {
+                        $allowSiblingDiscount = false;
+                    }
                 }
 
                 $appliedPromos[] = [
@@ -273,20 +218,7 @@ class PromotionApplier
                     'min_quantity' => $promo->min_quantity,
                     'gifts'        => $promo->type === 'free_gift' ? $freeGifts : [],
                 ];
-
-                Log::info('[PromotionApplier] Promotion applied successfully.', [
-                    'promo_id'       => $promo->id,
-                    'promo_name'     => $promo->name,
-                    'type'           => $promo->type,
-                    'discount'       => $discount,
-                    'running_total'  => $totalDiscount,
-                ]);
             } else {
-                Log::info('[PromotionApplier] Promotion resulted in zero discount and no gifts — not applied.', [
-                    'promo_id'   => $promo->id,
-                    'promo_name' => $promo->name,
-                    'type'       => $promo->type,
-                ]);
             }
         }
 
@@ -297,12 +229,7 @@ class PromotionApplier
             'allow_sibling_discount' => $allowSiblingDiscount,
         ];
 
-        Log::info('[PromotionApplier] Final promotion result.', [
-            'user_id'         => optional($user)->id,
-            'total_discount'  => $totalDiscount,
-            'free_gift_count' => count($freeGifts),
-            'promo_count'     => count($appliedPromos),
-        ]);
+
 
         return $response;
     }
@@ -314,13 +241,13 @@ class PromotionApplier
         if (!isset($productNames[$productId])) {
             try {
                 $product = \App\Models\Product::find($productId);
-                $productNames[$productId] = $product ? $product->title : 'Free Gift';
+                // Try 'name' field first, then 'title', then fallback
+                $productNames[$productId] = $product
+                    ? ($product->name ?? $product->title ?? "Product #{$productId}")
+                    : "Product #{$productId}";
             } catch (\Throwable $e) {
-                Log::error('[PromotionApplier] Failed to resolve product name.', [
-                    'product_id' => $productId,
-                    'error'      => $e->getMessage(),
-                ]);
-                $productNames[$productId] = 'Free Gift';
+
+                $productNames[$productId] = "Product #{$productId}";
             }
         }
 

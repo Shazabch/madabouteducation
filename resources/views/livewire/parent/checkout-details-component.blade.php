@@ -224,9 +224,9 @@
                                           <i class="fa fa-check-circle"></i> {{ $promo['name'] }}
                                        </th>
                                        <td>
-                                          <span class="text-success" style="font-size: 0.85rem;">
+                                          <!-- <span class="text-success" style="font-size: 0.85rem;">
                                              -{{ getCurrency() }}{{ number_format($promo['discount'], 2) }}
-                                          </span>
+                                          </span> -->
                                        </td>
                                     </tr>
                                     @endif
@@ -291,7 +291,7 @@
                                  @if($hasAppliedPromo && $hasGifts)
                                     <i class="fa fa-info-circle"></i> You have an applied promo and free gifts. Remove the promo to apply another code.
                                  @elseif($hasAppliedPromo)
-                                    <i class="fa fa-info-circle"></i> You already have a promo applied. Remove it to apply another code.
+                                    <i class="fa fa-info-circle"></i> You have a promo applied. Remove it to apply another code.
                                  @else
                                     <i class="fa fa-gift"></i> You have free gifts in your order. Remove the item that triggered the gift to apply a promo code.
                                  @endif
