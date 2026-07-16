@@ -4,7 +4,6 @@ namespace App\Http\Livewire\Parent;
 
 use App\Enums\OrderStatus;
 use App\Enums\PaymentStatus;
-use App\Mail\NewOrderMail;
 use App\Models\BookedProgram;
 use App\Models\Country;
 use App\Models\Order;
@@ -20,11 +19,9 @@ use Livewire\Component;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\Mail;
 
 use App\Traits\WithLockedProperties;
 use App\Services\PromotionApplier;
-use App\Services\PromotionValidator;
 
 class CheckoutDetailsComponent extends Component
 {
@@ -44,6 +41,9 @@ class CheckoutDetailsComponent extends Component
     public $programsSubTotal    = 0;
     public $programsDiscount    = 0;
     public $programsNetTotal    = 0;
+    public $grandSubTotal       = 0;
+    public $grandDiscount       = 0;
+    public $grandTotal          = 0;
 
     // Promotion Variables
     public $promoCode;
@@ -174,6 +174,17 @@ class CheckoutDetailsComponent extends Component
         $this->programsDiscount  = 0;
         $this->programsNetTotal  = 0;
         $this->sst               = 0;
+        if (!empty($this->promotionsData['applied_promotions'])) {
+            $this->programs = collect($this->programs)->map(function ($program) {
+                $order = $program['order'] ?? [];
+                $netTotal = (float) ($order['net_total'] ?? 0);
+                $sst = (float) ($order['sst'] ?? 0);
+                $order['net_total'] = ($netTotal -  $sst);
+                $order['sst'] = 0;
+                $program['order'] = $order;
+                return $program;
+            })->toArray();
+        }
 
         foreach ($this->programs as $program) {
             $order = $program['order'];
@@ -196,6 +207,17 @@ class CheckoutDetailsComponent extends Component
                 $this->grandTotal = 0;
             }
         }
+         //// Recalculate sst based on the combined subtotal of products and programs
+        $combinedSubTotal = $this->subTotal + $this->programsSubTotal
+            - $this->discount
+            - $this->programsDiscount;
+        if (!empty($this->promotionsData['applied_promotions'])) {
+            $this->sst = $combinedSubTotal * 0.08;
+            $this->grandTotal += $this->sst;
+        } else {
+            //$this->sst = 0;
+        }
+
     }
     public function getProducts()
     {

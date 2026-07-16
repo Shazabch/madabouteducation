@@ -161,6 +161,7 @@
                                  <td class="product-total">
                                     <span class="amount">{{ getCurrency() }}{{ number_format($program['order']['net_total'], 2) }}</span>
                                  </td>
+
                               </tr>
                               @endforeach
 
@@ -214,6 +215,11 @@
                                  <td><span class="amount">-{{ getCurrency() }}{{ number_format($grandDiscount , 2) }}</span></td>
                               </tr>
                               @endif
+
+                              <tr>
+                                 <th>SST (8%)</th>
+                                 <td><span class="amount">{{ getCurrency() }}{{ number_format($sst , 2) }}</span></td>
+                              </tr>
 
                               {{-- Applied promotions breakdown --}}
                               @if (!empty($promotionsData['applied_promotions']))
