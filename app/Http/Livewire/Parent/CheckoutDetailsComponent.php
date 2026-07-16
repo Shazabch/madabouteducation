@@ -207,12 +207,9 @@ class CheckoutDetailsComponent extends Component
                 $this->grandTotal = 0;
             }
         }
-         //// Recalculate sst based on the combined subtotal of products and programs
-        $combinedSubTotal = $this->subTotal + $this->programsSubTotal
-            - $this->discount
-            - $this->programsDiscount;
+
         if (!empty($this->promotionsData['applied_promotions'])) {
-            $this->sst = $combinedSubTotal * 0.08;
+            $this->sst = $this->grandTotal * (getSstValue());
             $this->grandTotal += $this->sst;
         } else {
             //$this->sst = 0;
